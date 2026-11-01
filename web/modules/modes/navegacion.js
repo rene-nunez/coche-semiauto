@@ -9,6 +9,7 @@ const navegacion = {
     ultimoDestino: null,
     marcadorD: null, // Marcador dinámico del destino
     marcadorSC: null, // Marcador dinámico del Smart Car
+    reinicioTimeout: null, // Temporizador de reinicio tras alcanzar el destino
     
     contenedor: null, // Interfaz del modo
 
@@ -118,6 +119,8 @@ const navegacion = {
             noWrap: true,
             attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
         }).addTo(this.mapa);
+
+        this.layerTema = layerTema;
 
         this.temaChangeHandler = () => {
             const url = themeCheckbox?.checked
@@ -307,6 +310,11 @@ const navegacion = {
     },
 
     reiniciar() {
+        if (this.reinicioTimeout) {
+            clearTimeout(this.reinicioTimeout);
+            this.reinicioTimeout = null;
+        }
+
         if (this.marcadorD && this.destino) {
             this.marcadorD.setPopupContent(`
                 <div class="text-xs font-mono leading-tight">
@@ -314,7 +322,7 @@ const navegacion = {
                 </div>
             `).openPopup();
 
-            setTimeout(() => {
+            this.reinicioTimeout = setTimeout(() => {
                 this.marcadorD?.closePopup();
                 if (this.marcadorD) this.mapa?.removeLayer(this.marcadorD);
 
@@ -322,6 +330,7 @@ const navegacion = {
                 this.destino = null;
                 this.ultimoDestino = null;
                 this.estado = "SIN_DESTINO";
+                this.reinicioTimeout = null;
 
                 this.actualizarBoton();
             }, 3000);
@@ -339,6 +348,11 @@ const navegacion = {
     },
 
     eliminar() {
+        if (this.reinicioTimeout) {
+            clearTimeout(this.reinicioTimeout);
+            this.reinicioTimeout = null;
+        }
+
         this.mapa?.off("click", this.mapaClickHandler);
 
         const themeCheckbox = document.querySelector(".theme-controller");

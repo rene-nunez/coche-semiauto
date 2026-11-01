@@ -3,8 +3,7 @@
     "version": "1.0.0",
     "description": "Control Web para Smart Car utilizando el protocolo MQTT",
     "private": true,
-    "license": "GPL-3.0",
-    "author": "anon",
+    "license": "MIT",
     "type": "module",
     "main": "main.js",
     "scripts": {
