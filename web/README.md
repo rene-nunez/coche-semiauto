@@ -18,7 +18,7 @@ Interfaz web para controlar un Smart Car en tiempo real mediante MQTT sobre WebS
 
 ### Requisitos
 
-* [Node.js y npm](https://nodejs.org) (v18.0 o superior).
+* [Node.js y npm](https://nodejs.org) (Node.js `20.19+` o `22.12+`, requisito de Vite 8).
 * Broker MQTT con soporte para WebSockets.
 
 ### 1. Clonar e instalar dependencias
@@ -26,8 +26,10 @@ Interfaz web para controlar un Smart Car en tiempo real mediante MQTT sobre WebS
 ```bash
 git clone https://github.com/rene-nunez/smart-car
 cd smart-car/web
-npm install
+npm ci
 ```
+
+> `npm ci` instala exactamente las versiones de `package-lock.json`. También puedes usar `npm install` si necesitas actualizar dependencias.
 
 ### 2. Configurar variables de entorno
 

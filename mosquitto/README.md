@@ -166,8 +166,10 @@ Enviar mensajes a un tópico específico. Esto es útil para simular acciones de
 > Se recomienda ejecutarlo en una terminal aparte para observar simultáneamente cómo el Modo monitor recibe el mensaje.
 
 ```bash
-mosquitto_pub -h <IP_LOCAL> -t "smartcar/control/joystick" -m "0.0,0.2"
+mosquitto_pub -h <IP_LOCAL> -t "smartcar/modo/manual" -m '{"x":0.0,"y":0.2}'
 ```
+
+> El tópico y el payload deben coincidir con los documentados en el [README principal](../README.md#comunicación-mqtt). En Windows, usa comillas dobles escapadas si tu terminal no interpreta las comillas simples.
 
 ## Diagnóstico
 

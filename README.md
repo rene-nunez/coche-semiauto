@@ -1,6 +1,6 @@
 # Smart Car
 
-Vehículo autónomo basado en ESP32, con control web en tiempo real y comunicación mediante MQTT. El proyecto permite controlar el vehículo de forma manual o utilizar distintos modos autónomos, como seguimiento de línea, evasión de obstáculos y navegación mediante GPS. Es compatible con brokers MQTT locales o públicos y no depende de aplicaciones móviles ni de servicios propietarios.
+Prototipo de vehículo autónomo utilizando un ESP32, con control web en tiempo real y comunicación mediante MQTT. El proyecto permite controlar el vehículo de forma manual o utilizar distintos modos autónomos, como seguimiento de línea, evasión de obstáculos y navegación mediante GPS. Es compatible con brokers MQTT locales o públicos y no depende de aplicaciones móviles ni de servicios propietarios.
 
 ![hardware](./assets/hardware.jpeg)
 
@@ -17,31 +17,26 @@ Vehículo autónomo basado en ESP32, con control web en tiempo real y comunicaci
 
 ## Arquitectura
 
-El navegador se comunica con el servidor del Control Web mediante WebSockets. El Control Web intercambia comandos y estados con el vehículo a través de un broker MQTT.
+El Control Web es una aplicación estática que se ejecuta en el navegador. El navegador se conecta directamente al broker MQTT mediante MQTT sobre WebSockets, mientras que el ESP32 lo hace mediante MQTT sobre TCP. El broker reenvía los comandos y estados entre ambos.
 
 ```text
-┌─────────────────┐
-│   Navegador web │
-└────────┬────────┘
-         │ WebSockets
-         ▼
-┌─────────────────┐
-│   Control Web   │
-└────────┬────────┘
-         │ MQTT sobre TCP
-         ▼
-┌─────────────────┐
-│   Broker MQTT   │
-└────────┬────────┘
-         │ MQTT
-         ▼
-┌─────────────────┐
-│   Smart Car     │
-│      ESP32      │
-└─────────────────┘
+┌──────────────────────┐
+│   Navegador web      │
+│    (Control Web)     │
+└──────────┬───────────┘
+           │ MQTT sobre WebSockets (9001)
+           ▼
+┌──────────────────────┐
+│      Broker MQTT     │
+└──────────┬───────────┘
+           │ MQTT sobre TCP (1883)
+           ▼
+┌──────────────────────┐
+│  Smart Car (ESP32)   │
+└──────────────────────┘
 ```
 
-> El puerto `1883` corresponde normalmente a MQTT sin TLS. Si utilizas otro puerto o una conexión segura, actualiza la configuración del broker y del firmware.
+> El puerto `1883` corresponde normalmente a MQTT sin TLS y el `9001` a MQTT sobre WebSockets. Si utilizas otros puertos o una conexión segura, actualiza la configuración del broker, del firmware y del Control Web.
 
 ## Modos de operación
 
@@ -94,9 +89,9 @@ Las dependencias se instalan automáticamente mediante PlatformIO durante la com
 
 | Librería | Versión |
 |:---|:---:|
-| [PubSubClient](https://registry.platformio.org/libraries/knolleary/PubSubClient) | — |
+| [PubSubClient](https://registry.platformio.org/libraries/knolleary/PubSubClient) | `^2.8.0` |
 | [ArduinoJson](https://registry.platformio.org/libraries/bblanchon/ArduinoJson) | `^7.2.2` |
-| [TinyGPSPlus](https://registry.platformio.org/libraries/mikalhart/TinyGPSPlus) | — |
+| [TinyGPSPlus](https://registry.platformio.org/libraries/mikalhart/TinyGPSPlus) | `^1.1.0` |
 | [PCF8574](https://registry.platformio.org/libraries/robtillaart/PCF8574) | `^0.4.4` |
 
 ## Requisitos
@@ -120,7 +115,7 @@ Abre [src/config.cpp](./src/config.cpp) y configura las credenciales de la red W
 const char* ssid = "YOUR_SSID";
 const char* password = "YOUR_PASSWORD";
 const char* mqtt_server = "BROKER_HOST";
-const int mqtt_port = 1883;
+const int port = 1883;
 ```
 
 Reemplaza los valores de ejemplo por los correspondientes a tu instalación:
@@ -128,7 +123,7 @@ Reemplaza los valores de ejemplo por los correspondientes a tu instalación:
 - `YOUR_SSID`: nombre de la red Wi-Fi.
 - `YOUR_PASSWORD`: contraseña de la red Wi-Fi.
 - `BROKER_HOST`: dirección IP o nombre de host del broker MQTT.
-- `mqtt_port`: puerto del broker MQTT, normalmente `1883`.
+- `port`: puerto del broker MQTT, normalmente `1883`.
 
 El ESP32 y el broker MQTT deben estar conectados a la misma red, salvo que el broker sea accesible desde Internet.
 
@@ -186,16 +181,16 @@ Consulta las instrucciones de instalación y configuración en el [README del co
 | Campo | Valores o rango | Descripción |
 |:---|:---|:---|
 | `modo` | `manual`, `seguidor`, `obstaculos`, `navegacion` | Modo de operación seleccionado. |
-| `tipo` | `izq`, `der`, `prev` | Luz direccional o luces preventivas. |
+| `tipo` | `izq`, `der`, `prev`, `off` | Luz direccional, luces preventivas o apagado. |
 | `accion` | `activar`, `desactivar`, `iniciar`, `detener`, `reanudar` | Acción que debe ejecutar el ESP32. |
 | `estado` | `0`, `1` | Desactivado o activado. |
 | `x` | `-1.0` a `1.0` | Posición horizontal del joystick. |
 | `y` | `-1.0` a `1.0` | Posición vertical del joystick. |
 | `lat` | Coordenada decimal | Latitud actual o de destino. |
 | `lon` | Coordenada decimal | Longitud actual o de destino. |
-| `error` | Distancia en metros | Error estimado respecto al destino. |
+| `error` | Grados | Error de rumbo respecto al destino. |
 | `sat` | Número entero | Número de satélites utilizados por el GPS. |
-| `destino` | `true` o `false` | Indica si existe un destino activo. |
+| `destino` | `true` o `false` | Indica si se alcanzó el destino; el Control Web reinicia la navegación al recibir `true`. |
 
 ## Licencia
 
