@@ -15,11 +15,13 @@ void MQTTManager::iniciar() {
 
 void MQTTManager::conectar() {
     static unsigned long ultimaReconexion = 0;
+    static bool primerIntento = true;
 
     if (!_client.connected()) {
         unsigned long ahora = millis();
-        // Delay de 5 segundos entre reintentos para no saturar el broker con CONNECT packets
-        if (ahora - ultimaReconexion > 5000) {
+        // Primer intento inmediato y luego uno cada 5 segundos para no saturar el broker con CONNECT packets
+        if (primerIntento || ahora - ultimaReconexion > 5000) {
+            primerIntento = false;
             ultimaReconexion = ahora;
 
             // ID único por dispositivo basado en la MAC; evita conflictos si hay múltiples smart-cars en el mismo broker

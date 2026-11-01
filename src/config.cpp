@@ -3,7 +3,7 @@
 const char* ssid = "YOUR_SSID";
 const char* password = "YOUR_PASSWORD";
 const char* mqtt_server = "BROKER_HOST";
-const int port = BROKER_PORT;
+const int port = 1883;
 
 const Topics topics = {
     .manual = "smartcar/modo/manual",

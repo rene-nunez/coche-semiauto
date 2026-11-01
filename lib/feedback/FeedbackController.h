@@ -19,8 +19,6 @@ class FeedbackController {
         void preventiva(float velocidadY, float zonaMuerta);
         void apagar();
 
-        void actualizarTimeout(unsigned long ahora);
-
     private:
         PCF8574 _pcf{0x20};
 
@@ -28,10 +26,9 @@ class FeedbackController {
 
         void ledRGB(const int color[3]);
 
-        unsigned long _ultimaVezLuces = 0;
-        bool _preventivasActivas = false;
         bool _direccionalDerActiva = false;
         bool _direccionalIzqActiva = false;
+        char _ultimaInstruccion[8] = "";
 };
 
 #endif

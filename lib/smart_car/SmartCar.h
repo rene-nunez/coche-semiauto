@@ -36,7 +36,6 @@ class SmartCar {
         float _velocidadConstante = 0.0;
         unsigned long _ultimaVezRecibido = 0;
         unsigned long _ultimaVezLuces = 0;
-        const char* _tipo = "";
 
         static SmartCar* _instance;
         static void onMessage(const char* topic, JsonDocument& doc);

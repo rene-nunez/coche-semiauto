@@ -47,6 +47,14 @@ void SmartCar::loop() {
     
     _mqtt.procesar();
 
+    // Sin conexión MQTT no hay forma de detener el vehículo de forma remota:
+    // se detiene y se desactivan los modos autónomos hasta que el usuario los reactive.
+    if (!_mqtt.estaConectado()) {
+        _motor.conducir(0, 0);
+        _velocidadConstante = 0.0;
+        _gpsNavigation.parar();
+    }
+
     // GPS y encoders se actualizan continuamente independientemente del modo
     _gpsNavigation.actualizar();
     _speedSensor.medir();
@@ -103,17 +111,19 @@ void SmartCar::handleMessage(const char* topic, JsonDocument& doc) {
             _modo = String(nuevoModo);
             _velocidadConstante = 0.0;
             _gpsNavigation.parar();
+            _feedback.apagar();
             _feedback.claxonConfirmar();
             _feedback.ledModo(nuevoModo);
-            _tipo = "off";
         }
     } else if (strcmp(topic, topics.seguidor) == 0) {
-        bool activo = (strcmp(doc["accion"], "activar") == 0);
+        const char* accion = doc["accion"];
+        bool activo = (accion && strcmp(accion, "activar") == 0);
         _velocidadConstante = activo ? 0.42 : 0.0;
         _lineFollower.reiniciarMomentum();
 
     } else if (strcmp(topic, topics.obstaculos) == 0) {
-        bool activo = (strcmp(doc["accion"], "activar") == 0);
+        const char* accion = doc["accion"];
+        bool activo = (accion && strcmp(accion, "activar") == 0);
         _velocidadConstante = activo ? 0.45 : 0.0;
 
     } else if (strcmp(topic, topics.navegacion) == 0) {
@@ -131,9 +141,9 @@ void SmartCar::handleMessage(const char* topic, JsonDocument& doc) {
             }
         }
     } else if (strcmp(topic, topics.luces) == 0) {
-        _tipo = doc["tipo"] | "off";
+        const char* tipo = doc["tipo"] | "off";
         _ultimaVezLuces = millis();
-        _feedback.direccional(_tipo);
+        _feedback.direccional(tipo);
 
     } else if (strcmp(topic, topics.claxon) == 0) {
         _feedback.claxon();

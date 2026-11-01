@@ -3,6 +3,13 @@
 FeedbackController::FeedbackController() {}
 
 void FeedbackController::iniciar() {
+    // Direccionales y freno son activos en bajo; el LED RGB es activo en alto.
+    // 0xFF apaga los primeros y ledRGB(colorNull) apaga el segundo.
+    if (!_pcf.begin(0xFF)) {
+        Serial.println(F("PCF8574 no detectado en la dirección 0x20"));
+    }
+    ledRGB(lucesConf.colorNull);
+
     ledcSetup(_canalBuzzer, freqBuzzer, resolucion);
     ledcAttachPin(pinBuzzer, _canalBuzzer);
 }
@@ -45,45 +52,46 @@ void FeedbackController::ledModo(const String& modo) {
     }
 }
 
-// La web envía comandos de toggle ("izq" = invertir estado izquierdo); el firmware mantiene el estado de cada LED
-// Se usa static para mantener el estado sin agregar campos a la clase (el estado de señalización es efímero)
+// La web reenvía el mismo tipo cada 500 ms para producir el parpadeo intencional.
+// Cada mensaje alterna el LED correspondiente; si cambia el tipo, se reinicia el estado.
 void FeedbackController::direccional(const char* instruccion) {
-    static bool estadoDer = false;
-    static bool estadoIzq = false;
-    static char ultimaInstruccion[8] = "";
-
-    // Si cambia la instrucción, resetear estados
-    if (strcmp(instruccion, ultimaInstruccion) != 0) {
-        estadoDer = false;
-        estadoIzq = false;
-        strncpy(ultimaInstruccion, instruccion, sizeof(ultimaInstruccion) - 1);
+    if (strcmp(instruccion, _ultimaInstruccion) != 0) {
+        _direccionalDerActiva = false;
+        _direccionalIzqActiva = false;
+        strncpy(_ultimaInstruccion, instruccion, sizeof(_ultimaInstruccion) - 1);
+        _ultimaInstruccion[sizeof(_ultimaInstruccion) - 1] = '\0';
     }
 
     if (strcmp(instruccion, "der") == 0) {
-        estadoIzq = false;
-        estadoDer = !estadoDer;
+        _direccionalIzqActiva = false;
+        _direccionalDerActiva = !_direccionalDerActiva;
     } else if (strcmp(instruccion, "izq") == 0) {
-        estadoDer = false;
-        estadoIzq = !estadoIzq;
+        _direccionalDerActiva = false;
+        _direccionalIzqActiva = !_direccionalIzqActiva;
     } else if (strcmp(instruccion, "prev") == 0) {
-        // Preventivas: si solo una direccional está activa, sincronizar ambas antes de toggle
-        if (estadoDer != estadoIzq) {
-            estadoDer = false;
-            estadoIzq = false;
+        // Preventivas: si solo una direccional está activa, sincronizar ambas antes de alternar
+        if (_direccionalDerActiva != _direccionalIzqActiva) {
+            _direccionalDerActiva = false;
+            _direccionalIzqActiva = false;
         }
-        estadoDer = !estadoDer;
-        estadoIzq = estadoDer;
+        _direccionalDerActiva = !_direccionalDerActiva;
+        _direccionalIzqActiva = _direccionalDerActiva;
     } else {
-        estadoDer = false;
-        estadoIzq = false;
+        _direccionalDerActiva = false;
+        _direccionalIzqActiva = false;
     }
 
     // PCF8574 usa lógica invertida: LOW = LED encendido
-    _pcf.write(lucesConf.pinLedDer, estadoDer ? LOW : HIGH);
-    _pcf.write(lucesConf.pinLedIzq, estadoIzq ? LOW : HIGH);
+    _pcf.write(lucesConf.pinLedDer, _direccionalDerActiva ? LOW : HIGH);
+    _pcf.write(lucesConf.pinLedIzq, _direccionalIzqActiva ? LOW : HIGH);
 }
 
 void FeedbackController::apagar() {
+    // Evita reescribir el PCF8574 en cada iteración del loop cuando ya están apagadas.
+    if (!_direccionalDerActiva && !_direccionalIzqActiva) return;
+
+    _direccionalDerActiva = false;
+    _direccionalIzqActiva = false;
     _pcf.write(lucesConf.pinLedDer, HIGH);
     _pcf.write(lucesConf.pinLedIzq, HIGH);
 }
@@ -95,14 +103,18 @@ void FeedbackController::preventiva(float velocidadY, float zonaMuerta) {
     static bool ultimoEstado = false;
     static unsigned long ultimaEscritura = 0;
     static unsigned long tiempoFreno = 0;
+    static bool frenoRegistrado = false;
 
     // Se considera frenado si: la velocidad absoluta baja más de 0.05, o se invierte la dirección
     bool frenando = abs(velocidadY) < abs(ultimaVelocidad) - 0.05f || (ultimaVelocidad > 0 && velocidadY < 0);
     bool enMovimiento = abs(ultimaVelocidad) > zonaMuerta;
     bool estadoFreno = frenando && enMovimiento;
 
-    if (estadoFreno) tiempoFreno = millis();
-    bool luzFreno = (millis() - tiempoFreno) < 500;
+    if (estadoFreno) {
+        tiempoFreno = millis();
+        frenoRegistrado = true;
+    }
+    bool luzFreno = frenoRegistrado && (millis() - tiempoFreno) < 500;
 
     unsigned long ahora = millis();
     
@@ -114,10 +126,4 @@ void FeedbackController::preventiva(float velocidadY, float zonaMuerta) {
         ultimaEscritura = ahora;
     }
     ultimaVelocidad = velocidadY;
-}
-
-void FeedbackController::actualizarTimeout(unsigned long ahora) {
-    if (ahora - _ultimaVezLuces > timeoutLuces) {
-        apagar();
-    }
 }
