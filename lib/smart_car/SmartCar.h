@@ -3,7 +3,7 @@
 
 #include "config.h"
 #include "Wifi.h"
-#include "MQTTManager.h"
+#include "Mqtt.h"
 #include "Encoder.h"
 #include "MotorDriver.h"
 #include "Sonar.h"
@@ -23,7 +23,7 @@ class SmartCar {
 
     private:
         Wifi _wifi;
-        MQTTManager _mqtt;
+        Mqtt _mqtt;
         Encoder _speedSensor;
         MotorDriver _motor;
         Sonar _ultrasonic;

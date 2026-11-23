@@ -1,8 +1,8 @@
 #include "GPSNavigation.h"
 #include "MotorDriver.h"
-#include "MQTTManager.h"
+#include "Mqtt.h"
 
-GPSNavigation::GPSNavigation(MotorDriver& motor, MQTTManager& mqtt, int rx, int tx)
+GPSNavigation::GPSNavigation(MotorDriver& motor, Mqtt& mqtt, int rx, int tx)
     : _motor(motor), _mqtt(mqtt), _serialGPS(2), _rxPin(rx), _txPin(tx) {}
 
 void GPSNavigation::iniciar() {
@@ -24,7 +24,7 @@ void GPSNavigation::actualizar() {
                     doc["error"] = _errorRumbo;
                     doc["sat"] = _satelites;
                     doc["destino"] = false;
-                    _mqtt.publicar(topics.ubicacion, doc);
+                    _mqtt.publish(topics.ubicacion, doc);
                     _ultimaPublicacion = millis();
                 }
             }
@@ -119,14 +119,14 @@ void GPSNavigation::terminar() {
 
     _motor.conducir(0, 0);
 
-    if (_mqtt.estaConectado()) {
+    if (_mqtt.isConnected()) {
         JsonDocument doc;
         doc["lat"] = _latActual;
         doc["lon"] = _lonActual;
         doc["error"] = _errorRumbo;
         doc["sat"] = _satelites;
         doc["destino"] = true;
-        _mqtt.publicar(topics.ubicacion, doc);
+        _mqtt.publish(topics.ubicacion, doc);
     }
 }
 

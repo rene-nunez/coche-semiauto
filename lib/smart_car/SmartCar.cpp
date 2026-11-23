@@ -25,8 +25,8 @@ void SmartCar::setup() {
     _wifi.connect();
     WiFi.setTxPower(WIFI_POWER_19_5dBm);
 
-    _mqtt.iniciar();
-    _mqtt.asignarCallback(onMessage);
+    _mqtt.begin();
+    _mqtt.setCallback(onMessage);
 
     Wire.begin(21, 22);
     Wire.setClock(400000);
@@ -43,15 +43,15 @@ void SmartCar::loop() {
     _wifi.update();
 
     // Reconexión automática (limitada internamente a 1 intento cada 5 segundos para no saturar el broker)
-    if (!_mqtt.estaConectado()) {
-        _mqtt.conectar();
+    if (!_mqtt.isConnected()) {
+        _mqtt.connect();
     }
-    
-    _mqtt.procesar();
+
+    _mqtt.loop();
 
     // Sin conexión MQTT no hay forma de detener el vehículo de forma remota:
     // se detiene y se desactivan los modos de asistencia hasta que el usuario los reactive.
-    if (!_mqtt.estaConectado()) {
+    if (!_mqtt.isConnected()) {
         _motor.conducir(0, 0);
         _velocidadConstante = 0.0f;
         _gpsNavigation.parar();

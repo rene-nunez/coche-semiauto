@@ -6,11 +6,11 @@
 #include <HardwareSerial.h>
 
 class MotorDriver;
-class MQTTManager;
+class Mqtt;
 
 class GPSNavigation {
     public:
-        GPSNavigation(MotorDriver& motor, MQTTManager& mqtt, int rx, int tx);
+        GPSNavigation(MotorDriver& motor, Mqtt& mqtt, int rx, int tx);
 
         void iniciar();
         void actualizar();
@@ -27,7 +27,7 @@ class GPSNavigation {
 
     private:
         MotorDriver& _motor;
-        MQTTManager& _mqtt;
+        Mqtt& _mqtt;
         HardwareSerial _serialGPS;
         TinyGPSPlus _gps;
 
