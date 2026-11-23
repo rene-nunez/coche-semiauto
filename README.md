@@ -1,14 +1,14 @@
 # Coche Semiautónomo
 
-Prototipo de vehículo **semiautónomo** con ESP32 y control desde el navegador por MQTT. Se maneja con un joystick virtual o con modos de asistencia (seguidor de línea, evasión de obstáculos y navegación GPS). Requiere supervisión humana en todo momento.
+Prototipo de coche semiautónomo con ESP32 y control desde el navegador por MQTT. Se maneja con un joystick virtual o con modos de asistencia (seguidor de línea, evasión de obstáculos y navegación GPS). Requiere supervisión humana en todo momento.
 
 ![hardware](./assets/hardware.jpeg)
 
 ## Características
 
 - **Manual:** joystick virtual, direccionales, frenos y claxon.
-- **Seguidor:** sigue una línea con el arreglo TCRT5000.
-- **Obstáculos:** detecta y esquiva objetos con el HC-SR04.
+- **Seguidor:** sigue una línea mediante un arreglo de sensores ópticos infrarrojos reflectivos TCRT5000.
+- **Obstáculos:** detecta y esquiva objetos con el sensor ultrasónico HC-SR04.
 - **Navegación:** avanza hacia coordenadas marcadas en el mapa.
 - **Seguridad:** se detiene si se pierde MQTT o WiFi, o si el joystick deja de enviar comandos.
 
@@ -35,15 +35,15 @@ El navegador usa MQTT sobre WebSockets; el ESP32 usa MQTT sobre TCP. El broker r
 Navegador (frontend) -- WebSocket :9001 --> Broker MQTT -- TCP :1883 --> ESP32 (firmware)
 ```
 
-> Si usas otros puertos o TLS, actualiza `mosquitto/mosquitto.conf`, `firmware/src/config.cpp` y `frontend/.env`.
+Si usas otros puertos o TLS, actualiza mosquitto/mosquitto.conf, firmware/src/config.cpp y frontend/.env.
 
-## Puesta en marcha
+## Instrucciones
 
-Necesitas un broker con WebSockets, [PlatformIO CLI](https://platformio.org/install/cli) y Node.js `20.19+` o `22.12+`.
+Necesitas un broker con WebSockets, [PlatformIO CLI](https://platformio.org/install/cli) y Node.js 20.19+.
 
 ### 1. Broker
 
-Se recomienda **Eclipse Mosquitto**: `mosquitto/mosquitto.conf` trae MQTT en 1883 y WebSockets en 9001. También funcionan brokers públicos (EMQX, HiveMQ, test.mosquitto.org), con sus propios puertos y rutas.
+Se recomienda [Eclipse Mosquitto](https://mosquitto.org/): [mosquitto/mosquitto.conf](mosquitto/mosquitto.conf) trae MQTT en 1883 y WebSockets en 9001. También funcionan brokers públicos como EMQX, HiveMQ, y test.mosquitto.org, con sus propios puertos y rutas de acceso.
 
 ESP32, broker y navegador deben estar en la misma red, salvo que el broker sea accesible desde Internet. Evita redes con aislamiento de punto de acceso.
 
@@ -54,11 +54,12 @@ Edita [firmware/src/config.cpp](./firmware/src/config.cpp) con tu red y broker:
 ```cpp
 const char* ssid = "YOUR_SSID";
 const char* password = "YOUR_PASSWORD";
+
 const char* mqttHost = "BROKER_HOST";
 const int mqttPort = 1883;
 ```
 
-Compila y carga desde `firmware/`:
+Compila y carga desde el directorio firmware:
 
 ```bash
 cd firmware
@@ -67,28 +68,39 @@ pio run --target upload
 pio device monitor
 ```
 
-Las librerías se instalan solas: PubSubClient `^2.8.0`, TinyGPSPlus `^1.1.0`, PCF8574 `^0.4.4` y ArduinoJson `^7.2.2`.
+Las librerías que se utilizan son:
+
+- PubSubClient `^2.8.0`
+- TinyGPSPlus `^1.1.0`
+- PCF8574 `^0.4.4`
+- ArduinoJson `^7.2.2`.
 
 ### 3. Frontend
 
 ```bash
 cd frontend
 npm ci
-cp .env.example .env   # host, puerto y ruta WebSocket del broker
+cp .env.example .env
+```
+
+Edita `.env` con el protocolo (`ws`/`wss`), host, puerto y ruta WebSocket del broker. Los ejemplos están en [`.env.example`](./frontend/.env.example). Después inicia el servidor:
+
+```bash
 npm run dev
 ```
 
-Abre `http://localhost:3000`. `npm run build` genera `frontend/dist`. Más detalles en [frontend/README.md](./frontend/README.md).
+Abre [http://localhost:3000](http://localhost:3000). `npm run build` genera frontend/dist. Más detalles en [frontend/README.md](./frontend/README.md).
 
 ### 4. Uso
 
 1. Enciende el ESP32 y el broker, y abre el frontend.
-2. Espera a que el indicador MQTT muestre **Conectado**.
+2. Espera a que el indicador MQTT muestre el estado "Conectado".
 3. Selecciona un modo y usa los controles disponibles.
 
 ## MQTT
 
-Prefijo de todos los tópicos: `coche-semiauto/`. El frontend publica comandos y escucha la ubicación; el firmware hace lo contrario.
+Prefijo de todos los tópicos: coche-semiauto/.
+El frontend publica comandos y escucha la ubicación; el firmware hace lo contrario.
 
 | Publicador | Suscriptor | Tópico | Ejemplo |
 |:---|:---|:---|:---|
