@@ -220,9 +220,10 @@ const manual = {
         // Obtener la nueva luz activa después del cambio
         const activaActual = Object.keys(this.estadoLuces).find(k => this.estadoLuces[k]);
 
-        // Si ninguna luz quedó activa se detienen las publicaciones
+        // Si ninguna luz quedó activa se detienen las publicaciones y se apaga el LED
         if (!activaActual) {
             this.limpiarIntervaloLuces();
+            mqttService.publicar(topics.accion.luces, {tipo: "off"});
             return;
         }
 
@@ -230,9 +231,10 @@ const manual = {
         if (activaAnterior !== activaActual || !this.lucesInterval) {
             this.limpiarIntervaloLuces();
 
-            // Publicar la luz activa cada 500ms
+            // Publicar enseguida y repetir cada 500ms para producir el parpadeo
+            mqttService.publicar(topics.accion.luces, {tipo: activaActual});
             this.lucesInterval = setInterval(() => {
-                mqttService.publicar(topics.accion.luces,{tipo: activaActual});
+                mqttService.publicar(topics.accion.luces, {tipo: activaActual});
             }, 500);
         }
     },
@@ -260,7 +262,12 @@ const manual = {
     },
 
     eliminar() {
+        const habiaLuces = Object.values(this.estadoLuces).some(Boolean);
         this.estadoLuces = {izq: false, prev: false, der: false};
+
+        if (habiaLuces) {
+            mqttService.publicar(topics.accion.luces, {tipo: "off"});
+        }
 
         if (this.abortController) {
             this.abortController.abort();

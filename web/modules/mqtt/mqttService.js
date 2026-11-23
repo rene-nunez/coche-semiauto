@@ -20,13 +20,26 @@ const URL = (() => {
 
 const isDev = import.meta.env.DEV;
 
+// Comandos que deben reenviarse tras una reconexión: sin ellos el ESP32 puede
+// quedarse en un modo distinto al que muestra la interfaz.
+const TOPICOS_REPETIBLES = new Set([
+    topics.accion.modo,
+    topics.modo.seguidor,
+    topics.modo.obstaculos,
+    topics.modo.navegacion
+]);
+
+const pendientes = new Map();
+
 const mqttService = {
     cliente: null,
     callback: null,
 
     conectar() {
+        if (this.cliente) return;
+
         this.cliente = mqtt.connect(URL, {
-            clientId: "control-web-" + Math.random().toString(16).slice(2, 6),
+            clientId: "control-web-" + (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)),
             clean: true,
             reconnectPeriod: 2000,
             connectTimeout: 5000
@@ -49,6 +62,12 @@ const mqttService = {
             this.cliente.subscribe(topics.estado.ubicacion, (err) => {
                 if (err) console.error(`[MQTT] error subscribe (${topics.estado.ubicacion})`, err);
             });
+
+            // Reenviar el último comando de cada tópico crítico (también los
+            // publicados antes de completar la primera conexión).
+            for (const [topico, mensaje] of pendientes) {
+                this.publicar(topico, mensaje);
+            }
         });
 
         this.cliente.on("reconnect", () => {
@@ -69,18 +88,22 @@ const mqttService = {
         });
 
         this.cliente.on("message", (topic, message) => {
-            try {
-                const payload = JSON.parse(message.toString());
-                
-                if (isDev) console.info(`[MQTT] mensaje (${topic})`, payload);
-                
-                if (this.callback) {
-                    this.callback(topic, payload);
-                } 
+            let payload;
 
+            try {
+                payload = JSON.parse(message.toString());
             } catch (err) {
-                console.error(`[MQTT] mensaje inválido (${topic})`);
+                console.error(`[MQTT] mensaje inválido (${topic})`, err.message);
                 if (isDev) console.error("Payload:", message.toString());
+                return;
+            }
+
+            if (isDev) console.info(`[MQTT] mensaje (${topic})`, payload);
+
+            try {
+                this.callback?.(topic, payload);
+            } catch (err) {
+                console.error(`[MQTT] error en handler (${topic})`, err);
             }
         });
     },
@@ -90,13 +113,17 @@ const mqttService = {
     },
 
     publicar(topic, mensaje) {
-        if (!this.cliente?.connected) {
-            console.warn(`[MQTT] publish sin conexión (${topic})`);
+        if (!mensaje || typeof mensaje !== "object" || Array.isArray(mensaje)) {
+            console.error(`[MQTT] payload inválido (${topic})`);
             return;
         }
 
-        if (typeof mensaje !== "object") {
-            console.error(`[MQTT] payload inválido (${topic})`);
+        if (TOPICOS_REPETIBLES.has(topic)) {
+            pendientes.set(topic, mensaje);
+        }
+
+        if (!this.cliente?.connected) {
+            console.warn(`[MQTT] publish sin conexión (${topic})`);
             return;
         }
 

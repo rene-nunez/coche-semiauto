@@ -102,6 +102,8 @@ const navegacion = {
         this.mapa = L.map("mapa", {
             center: [0, 0],
             zoom: 16,
+            minZoom: 3,
+            maxZoom: 21,
             maxBounds: [[-90, -180], [90, 180]], // Límite para evitar mapa en el vacío
             maxBoundsViscosity: 1.0,
             worldCopyJump: false // Evitar mapa infinito horizontalmente
@@ -189,6 +191,13 @@ const navegacion = {
             if (this.divDistancia) this.divDistancia.textContent = `${dist.toFixed(2)}m`;
         }
 
+        // Si ya estábamos navegando, el nuevo destino debe enviarse al coche;
+        // de lo contrario la interfaz mostraría un destino distinto al real.
+        if (this.estado === "NAVEGANDO" &&
+            (!this.ultimoDestino || latlng.distanceTo(this.ultimoDestino) > 1)) {
+            this.enviarAccion("iniciar");
+        }
+
         if (this.estado === "SIN_DESTINO") this.estado = "DESTINO_SELECCIONADO";
 
         this.actualizarBoton();
@@ -237,8 +246,8 @@ const navegacion = {
     actualizarInterfaz(lat, lon, error, sat) {
         if (!this.mapa) return;
 
-        if (this.divError) this.divError.textContent = `${Math.round(error)}°`;
-        if (this.divSatelites) this.divSatelites.textContent = sat;
+        if (this.divError && Number.isFinite(error)) this.divError.textContent = `${Math.round(error)}°`;
+        if (this.divSatelites && Number.isInteger(sat)) this.divSatelites.textContent = sat;
 
         const pos = L.latLng(lat, lon);
 
@@ -336,7 +345,7 @@ const navegacion = {
             }, 3000);
 
         } else {
-            this.mapa?.removeLayer(this.marcadorD);
+            if (this.marcadorD) this.mapa?.removeLayer(this.marcadorD);
             this.marcadorD = null;
 
             this.destino = null;

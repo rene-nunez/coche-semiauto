@@ -42,6 +42,20 @@ function setMode(mode, name) {
     mqttService.publicar(topics.accion.modo, {modo: name});
 }
 
+// Al recargar o cerrar la pestaña no se ejecutan los eliminar() de los modos:
+// publicar la parada evita que el coche siga avanzando sin supervisión.
+window.addEventListener("pagehide", () => {
+    if (currentMode === manual) {
+        mqttService.publicar(topics.modo.manual, {x: 0, y: 0});
+    } else if (currentMode === seguidor) {
+        mqttService.publicar(topics.modo.seguidor, {accion: "desactivar"});
+    } else if (currentMode === obstaculos) {
+        mqttService.publicar(topics.modo.obstaculos, {accion: "desactivar"});
+    } else if (currentMode === navegacion && navegacion.estado === "NAVEGANDO") {
+        mqttService.publicar(topics.modo.navegacion, {accion: "detener"});
+    }
+});
+
 mqttService.recibir((topic, payload) => {
     if (!payload) return;
 
