@@ -2,7 +2,7 @@
 #define SMART_CAR_H
 
 #include "config.h"
-#include "WiFiManager.h"
+#include "Wifi.h"
 #include "MQTTManager.h"
 #include "Encoder.h"
 #include "MotorDriver.h"
@@ -22,7 +22,7 @@ class SmartCar {
         void loop();
 
     private:
-        WiFiManager _wifi;
+        Wifi _wifi;
         MQTTManager _mqtt;
         Encoder _speedSensor;
         MotorDriver _motor;

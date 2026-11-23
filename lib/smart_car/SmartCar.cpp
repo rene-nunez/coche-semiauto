@@ -22,7 +22,7 @@ void SmartCar::setup() {
     Serial.begin(115200);
     analogReadResolution(8);
 
-    _wifi.conectar();
+    _wifi.connect();
     WiFi.setTxPower(WIFI_POWER_19_5dBm);
 
     _mqtt.iniciar();
@@ -40,7 +40,7 @@ void SmartCar::setup() {
 }
 
 void SmartCar::loop() {
-    _wifi.actualizar();
+    _wifi.update();
 
     // Reconexión automática (limitada internamente a 1 intento cada 5 segundos para no saturar el broker)
     if (!_mqtt.estaConectado()) {
