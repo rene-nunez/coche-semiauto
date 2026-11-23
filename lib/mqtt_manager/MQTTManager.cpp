@@ -46,9 +46,13 @@ void MQTTManager::procesar() {
 }
 
 void MQTTManager::publicar(const char* topic, JsonDocument& doc) {
-    char payload[120];
-    serializeJson(doc, payload);
-    _client.publish(topic, payload);
+    char payload[160];
+    size_t longitud = serializeJson(doc, payload, sizeof(payload));
+    if (longitud == 0 || longitud >= sizeof(payload)) {
+        Serial.println(F("Payload MQTT demasiado largo; no se publica"));
+        return;
+    }
+    _client.publish(topic, payload, longitud);
 }
 
 void MQTTManager::asignarCallback(MessageCallback cb) {

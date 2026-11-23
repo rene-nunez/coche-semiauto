@@ -40,6 +40,8 @@ void SmartCar::setup() {
 }
 
 void SmartCar::loop() {
+    _wifi.actualizar();
+
     // Reconexión automática (limitada internamente a 1 intento cada 5 segundos para no saturar el broker)
     if (!_mqtt.estaConectado()) {
         _mqtt.conectar();
@@ -51,9 +53,13 @@ void SmartCar::loop() {
     // se detiene y se desactivan los modos autónomos hasta que el usuario los reactive.
     if (!_mqtt.estaConectado()) {
         _motor.conducir(0, 0);
-        _velocidadConstante = 0.0;
+        _velocidadConstante = 0.0f;
         _gpsNavigation.parar();
+        _feedback.apagar();
     }
+
+    // El claxon y las luces de freno usan temporizadores no bloqueantes
+    _feedback.actualizar();
 
     // GPS y encoders se actualizan continuamente independientemente del modo
     _gpsNavigation.actualizar();
@@ -146,6 +152,9 @@ void SmartCar::handleMessage(const char* topic, JsonDocument& doc) {
         _feedback.direccional(tipo);
 
     } else if (strcmp(topic, topics.claxon) == 0) {
-        _feedback.claxon();
+        int estado = doc["estado"] | 1;
+        if (estado != 0) {
+            _feedback.claxon();
+        }
     }
 }

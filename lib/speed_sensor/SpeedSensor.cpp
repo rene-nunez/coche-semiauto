@@ -29,11 +29,14 @@ void SpeedSensor::medir() {
     unsigned long ahora = millis();
     unsigned long delta = ahora - _ultimoTiempo;
     if (delta >= 120) {
-        // Copiar atómicamente y reiniciar evita condiciones de carrera con la ISR sin necesidad de locks
+        // Lectura y reinicio atómicos: sin esto una ISR puede contar un pulso
+        // entre la lectura y el reinicio y ese pulso se perdería.
+        noInterrupts();
         uint32_t pulsosD = _pulsosDer;
         uint32_t pulsosI = _pulsosIzq;
         _pulsosDer = 0;
         _pulsosIzq = 0;
+        interrupts();
         float minutos = delta / 60000.0f;
         _velocidadDer = (pulsosD / (float)PULSOS_POR_VUELTA) / minutos;
         _velocidadIzq = (pulsosI / (float)PULSOS_POR_VUELTA) / minutos;

@@ -82,8 +82,10 @@ void MotorDriver::conducir(float valorX, float valorY) {
             float dt = constrain((ahora - _ultimaCorreccion) / 1000.0f, 0.0f, 0.2f);
             _ultimaCorreccion = ahora;
 
-            // Error = diferencia de RPM entre ruedas; zona muerta para ignorar imperfecciones mecánicas del disco encoder
-            float error = velIzq - velDer;
+            // Error = diferencia de RPM entre ruedas; zona muerta para ignorar imperfecciones mecánicas del disco encoder.
+            // En marcha atrás la corrección debe invertirse: la misma diferencia de velocidades
+            // hace girar el coche en sentido contrario.
+            float error = (velIzq - velDer) * (valorY >= 0.0f ? 1.0f : -1.0f);
             if (abs(error) < ERROR_DEADBAND_RPM) {
                 error = 0.0f;
             }

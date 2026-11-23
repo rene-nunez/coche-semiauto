@@ -61,10 +61,11 @@ void LineFollower::ejecutar(float velocidadConstante) {
 
         _errorAnterior = error;
 
-        correccion = constrain(correccion, -1.0f, 1.0f);
-        _motor.conducir(correccion, velActual);
+        _motor.conducir(constrain(_momentum, -1.0f, 1.0f), velActual);
     } else {
         // Sin sensores en línea: usar momentum para seguir la dirección previa a media velocidad
-        _motor.conducir(_momentum * 0.5f, velocidadConstante * 0.5f);
+        float factorDecay = expf(-dt / kTiempoDecay_ms);
+        _momentum *= factorDecay;
+        _motor.conducir(constrain(_momentum * 0.5f, -1.0f, 1.0f), velocidadConstante * 0.5f);
     }
 }

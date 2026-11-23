@@ -134,6 +134,10 @@ void GPSNavigation::colocarDestino(double lat, double lon) {
     _latDestino = lat;
     _lonDestino = lon;
     _estadoNav = (_latDestino != 0.0 || _lonDestino != 0.0);
+
+    // El rumbo inicial debe medirse desde la posición actual, no desde la del
+    // destino anterior; si no, la primera corrección apunta en dirección errónea.
+    _primeraLecturaRealizada = false;
 }
 
 void GPSNavigation::avanzar() {

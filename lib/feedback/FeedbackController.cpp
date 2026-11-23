@@ -1,5 +1,12 @@
 #include "FeedbackController.h"
 
+namespace {
+const int TONOS_CLAXON[] = {800, 1000, 1200};
+const unsigned long DURACIONES_CLAXON[] = {50, 50, 50};
+const int TONOS_CONFIRMAR[] = {600, 900};
+const unsigned long DURACIONES_CONFIRMAR[] = {80, 80};
+}
+
 FeedbackController::FeedbackController() {}
 
 void FeedbackController::iniciar() {
@@ -14,22 +21,31 @@ void FeedbackController::iniciar() {
     ledcAttachPin(pinBuzzer, _canalBuzzer);
 }
 
+// Secuencias no bloqueantes: el loop sigue atendiendo MQTT, GPS y el watchdog
+// mientras suena el claxon.
+void FeedbackController::iniciarSecuencia(const int* tonos, const unsigned long* duraciones, uint8_t pasos) {
+    _tonos = tonos;
+    _duraciones = duraciones;
+    _numTonos = pasos;
+    _pasoClaxon = 0;
+    _claxonActivo = pasos > 0;
+
+    if (!_claxonActivo) {
+        ledcWriteTone(_canalBuzzer, 0);
+        return;
+    }
+
+    ledcWriteTone(_canalBuzzer, _tonos[0]);
+    _siguienteTono = millis() + _duraciones[0];
+    _pasoClaxon = 1;
+}
+
 void FeedbackController::claxon() {
-    ledcWriteTone(_canalBuzzer, 800);
-    delay(50);
-    ledcWriteTone(_canalBuzzer, 1000);
-    delay(50);
-    ledcWriteTone(_canalBuzzer, 1200);
-    delay(50);
-    ledcWriteTone(_canalBuzzer, 0);
+    iniciarSecuencia(TONOS_CLAXON, DURACIONES_CLAXON, 3);
 }
 
 void FeedbackController::claxonConfirmar() {
-    ledcWriteTone(_canalBuzzer, 600);
-    delay(80);
-    ledcWriteTone(_canalBuzzer, 900);
-    delay(80);
-    ledcWriteTone(_canalBuzzer, 0);
+    iniciarSecuencia(TONOS_CONFIRMAR, DURACIONES_CONFIRMAR, 2);
 }
 
 void FeedbackController::ledRGB(const int color[3]) {
@@ -88,42 +104,69 @@ void FeedbackController::direccional(const char* instruccion) {
 
 void FeedbackController::apagar() {
     // Evita reescribir el PCF8574 en cada iteración del loop cuando ya están apagadas.
-    if (!_direccionalDerActiva && !_direccionalIzqActiva) return;
+    if (_direccionalDerActiva || _direccionalIzqActiva) {
+        _direccionalDerActiva = false;
+        _direccionalIzqActiva = false;
+        _pcf.write(lucesConf.pinLedDer, HIGH);
+        _pcf.write(lucesConf.pinLedIzq, HIGH);
+    }
 
-    _direccionalDerActiva = false;
-    _direccionalIzqActiva = false;
-    _pcf.write(lucesConf.pinLedDer, HIGH);
-    _pcf.write(lucesConf.pinLedIzq, HIGH);
+    if (_frenoRegistrado || _ultimoEstadoFreno) {
+        _frenoRegistrado = false;
+        _ultimoEstadoFreno = false;
+        _ultimaVelocidad = 0.0f;
+        _pcf.write(lucesConf.pinFrenoDer, HIGH);
+        _pcf.write(lucesConf.pinFrenoIzq, HIGH);
+    }
 }
 
-// Detecta desaceleración (frenado) para encender las luces de freno durante 500 ms.
-// Usa eventos no polling: solo escribe al PCF8574 cuando el estado cambia, con debounce de 50 ms (el I2C del PCF8574 es lento)
+// Registra una desaceleración (frenado). La duración de 500 ms se evalúa en
+// actualizar(), porque el último comando del joystick no se repite y el freno
+// se quedaba encendido para siempre.
 void FeedbackController::preventiva(float velocidadY, float zonaMuerta) {
-    static float ultimaVelocidad = 0;
-    static bool ultimoEstado = false;
-    static unsigned long ultimaEscritura = 0;
-    static unsigned long tiempoFreno = 0;
-    static bool frenoRegistrado = false;
-
     // Se considera frenado si: la velocidad absoluta baja más de 0.05, o se invierte la dirección
-    bool frenando = abs(velocidadY) < abs(ultimaVelocidad) - 0.05f || (ultimaVelocidad > 0 && velocidadY < 0);
-    bool enMovimiento = abs(ultimaVelocidad) > zonaMuerta;
-    bool estadoFreno = frenando && enMovimiento;
+    bool frenando = abs(velocidadY) < abs(_ultimaVelocidad) - 0.05f || (_ultimaVelocidad > 0 && velocidadY < 0);
+    bool enMovimiento = abs(_ultimaVelocidad) > zonaMuerta;
 
-    if (estadoFreno) {
-        tiempoFreno = millis();
-        frenoRegistrado = true;
+    if (frenando && enMovimiento) {
+        _tiempoFreno = millis();
+        _frenoRegistrado = true;
     }
-    bool luzFreno = frenoRegistrado && (millis() - tiempoFreno) < 500;
 
-    unsigned long ahora = millis();
-    
+    _ultimaVelocidad = velocidadY;
+}
+
+void FeedbackController::actualizarFreno() {
+    if (!_frenoRegistrado) return;
+
+    bool luzFreno = (millis() - _tiempoFreno) < 500;
+    if (luzFreno == _ultimoEstadoFreno) return;
+
     // Debounce de 50 ms: el PCF8574 por I2C puede generar NACK si se escribe muy rápido
-    if (luzFreno != ultimoEstado && (ahora - ultimaEscritura) > 50) {
-        _pcf.write(lucesConf.pinFrenoDer, luzFreno ? LOW : HIGH);
-        _pcf.write(lucesConf.pinFrenoIzq, luzFreno ? LOW : HIGH);
-        ultimoEstado = luzFreno;
-        ultimaEscritura = ahora;
+    unsigned long ahora = millis();
+    if (ahora - _ultimaEscrituraFreno <= 50) return;
+
+    _pcf.write(lucesConf.pinFrenoDer, luzFreno ? LOW : HIGH);
+    _pcf.write(lucesConf.pinFrenoIzq, luzFreno ? LOW : HIGH);
+    _ultimoEstadoFreno = luzFreno;
+    _ultimaEscrituraFreno = ahora;
+
+    if (!luzFreno) {
+        _frenoRegistrado = false;
     }
-    ultimaVelocidad = velocidadY;
+}
+
+void FeedbackController::actualizar() {
+    actualizarFreno();
+
+    if (!_claxonActivo || millis() < _siguienteTono) return;
+
+    if (_pasoClaxon < _numTonos) {
+        ledcWriteTone(_canalBuzzer, _tonos[_pasoClaxon]);
+        _siguienteTono = millis() + _duraciones[_pasoClaxon];
+        ++_pasoClaxon;
+    } else {
+        ledcWriteTone(_canalBuzzer, 0);
+        _claxonActivo = false;
+    }
 }

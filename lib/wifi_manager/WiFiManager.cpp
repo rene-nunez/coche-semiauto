@@ -8,6 +8,7 @@ void WiFiManager::conectar() {
     Serial.println();
     Serial.print("Conectando a ");
     Serial.println(_ssid);
+    WiFi.setAutoReconnect(true);
     WiFi.begin(_ssid, _password);
 
     unsigned long inicio = millis();
@@ -26,4 +27,17 @@ void WiFiManager::conectar() {
     Serial.println("WiFi conectado");
     Serial.print("IP: ");
     Serial.println(WiFi.localIP());
+}
+
+void WiFiManager::actualizar() {
+    static unsigned long ultimoIntento = 0;
+
+    if (WiFi.status() == WL_CONNECTED) return;
+
+    // WiFi.setAutoReconnect() ya lo intenta, pero un reconnect explícito
+    // cada 5 s recupera también caídas del AP que la pila WiFi no detecta.
+    if (millis() - ultimoIntento < 5000) return;
+    ultimoIntento = millis();
+
+    WiFi.reconnect();
 }

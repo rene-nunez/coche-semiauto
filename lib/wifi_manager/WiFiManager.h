@@ -8,6 +8,7 @@ class WiFiManager {
     public:
         WiFiManager(const char* ssid, const char* password);
         void conectar();
+        void actualizar();
 
     private:
         const char* _ssid;
