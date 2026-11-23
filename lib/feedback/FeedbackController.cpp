@@ -21,8 +21,7 @@ void FeedbackController::iniciar() {
     ledcAttachPin(pinBuzzer, _canalBuzzer);
 }
 
-// Secuencias no bloqueantes: el loop sigue atendiendo MQTT, GPS y el watchdog
-// mientras suena el claxon.
+// Secuencias no bloqueantes: el loop sigue atendiendo MQTT, GPS y el watchdog mientras suena el claxon.
 void FeedbackController::iniciarSecuencia(const int* tonos, const unsigned long* duraciones, uint8_t pasos) {
     _tonos = tonos;
     _duraciones = duraciones;
@@ -120,9 +119,8 @@ void FeedbackController::apagar() {
     }
 }
 
-// Registra una desaceleración (frenado). La duración de 500 ms se evalúa en
-// actualizar(), porque el último comando del joystick no se repite y el freno
-// se quedaba encendido para siempre.
+// Registra una desaceleración (frenado). La duración de 500 ms se evalúa en actualizar(),
+// porque el último comando del joystick no se repite y el freno se quedaba encendido para siempre.
 void FeedbackController::preventiva(float velocidadY, float zonaMuerta) {
     // Se considera frenado si: la velocidad absoluta baja más de 0.05, o se invierte la dirección
     bool frenando = abs(velocidadY) < abs(_ultimaVelocidad) - 0.05f || (_ultimaVelocidad > 0 && velocidadY < 0);

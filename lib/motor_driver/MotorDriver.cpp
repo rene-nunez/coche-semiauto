@@ -1,5 +1,5 @@
 #include "MotorDriver.h"
-#include "SpeedSensor.h"
+#include "Encoder.h"
 
 int MotorDriver::_ultimoPWM[16] = {-1};
 
@@ -17,7 +17,7 @@ void MotorDriver::iniciar() {
     ledcAttachPin(motorB2, canalB2);
 }
 
-void MotorDriver::asignarSensorVelocidad(SpeedSensor* sensor) {
+void MotorDriver::asignarSensorVelocidad(Encoder* sensor) {
     _speedSensor = sensor;
 }
 
@@ -68,8 +68,8 @@ void MotorDriver::conducir(float valorX, float valorY) {
 
     // Solo aplica corrección PI si hay sensor de velocidad conectado
     if (_speedSensor != nullptr) {
-        float velIzq = _speedSensor->obtenerVelocidadIzq();
-        float velDer = _speedSensor->obtenerVelocidadDer();
+        float velIzq = _speedSensor->leftRpm();
+        float velDer = _speedSensor->rightRpm();
         float velPromedio = (velIzq + velDer) / 2.0f;
 
         // La corrección PI solo tiene sentido en línea recta; al girar las ruedas giran a distinta velocidad por diseño
@@ -83,8 +83,7 @@ void MotorDriver::conducir(float valorX, float valorY) {
             _ultimaCorreccion = ahora;
 
             // Error = diferencia de RPM entre ruedas; zona muerta para ignorar imperfecciones mecánicas del disco encoder.
-            // En marcha atrás la corrección debe invertirse: la misma diferencia de velocidades
-            // hace girar el coche en sentido contrario.
+            // En marcha atrás la corrección debe invertirse: la misma diferencia de velocidades hace girar el coche en sentido contrario.
             float error = (velIzq - velDer) * (valorY >= 0.0f ? 1.0f : -1.0f);
             if (abs(error) < ERROR_DEADBAND_RPM) {
                 error = 0.0f;

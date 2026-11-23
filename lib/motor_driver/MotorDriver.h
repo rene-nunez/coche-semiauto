@@ -3,7 +3,7 @@
 
 #include "config.h"
 
-class SpeedSensor;
+class Encoder;
 
 class MotorDriver {
     public:
@@ -15,11 +15,11 @@ class MotorDriver {
         void conducir(float x, float y);
         void detener();
 
-        void asignarSensorVelocidad(SpeedSensor* sensor);
+        void asignarSensorVelocidad(Encoder* sensor);
         float obtenerUltimoY() const;
 
     private:
-        SpeedSensor* _speedSensor = nullptr;
+        Encoder* _speedSensor = nullptr;
 
         static const int minPWM = 140;
         static const int maxPWM = 255;

@@ -36,7 +36,7 @@ void SmartCar::setup() {
     _motor.iniciar();
     _lineFollower.iniciar();
     _ultrasonic.iniciar();
-    _speedSensor.iniciar();
+    _speedSensor.begin();
 }
 
 void SmartCar::loop() {
@@ -63,7 +63,7 @@ void SmartCar::loop() {
 
     // GPS y encoders se actualizan continuamente independientemente del modo
     _gpsNavigation.actualizar();
-    _speedSensor.medir();
+    _speedSensor.read();
 
     if (_modo == "manual") {
         // Timeout de seguridad: si no llega comando manual en 500 ms, detener el auto

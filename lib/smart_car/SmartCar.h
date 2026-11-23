@@ -4,7 +4,7 @@
 #include "config.h"
 #include "WiFiManager.h"
 #include "MQTTManager.h"
-#include "SpeedSensor.h"
+#include "Encoder.h"
 #include "MotorDriver.h"
 #include "UltrasonicSensor.h"
 #include "FeedbackController.h"
@@ -24,7 +24,7 @@ class SmartCar {
     private:
         WiFiManager _wifi;
         MQTTManager _mqtt;
-        SpeedSensor _speedSensor;
+        Encoder _speedSensor;
         MotorDriver _motor;
         UltrasonicSensor _ultrasonic;
         FeedbackController _feedback;
