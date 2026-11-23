@@ -1,6 +1,6 @@
-#include "SmartCar.h"
+#include "Car.h"
 
-SmartCar car;
+Car car;
 
 void setup() {
     car.setup();

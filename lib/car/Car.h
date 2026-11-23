@@ -1,5 +1,5 @@
-#ifndef SMART_CAR_H
-#define SMART_CAR_H
+#ifndef CAR_H
+#define CAR_H
 
 #include "config.h"
 #include "Wifi.h"
@@ -15,29 +15,32 @@
 #include <ArduinoJson.h>
 #include <Wire.h>
 
-class SmartCar {
+class Car {
     public:
-        SmartCar();
+        Car();
         void setup();
         void loop();
 
     private:
+        void stop();
+
         Wifi _wifi;
         Mqtt _mqtt;
-        Encoder _speedSensor;
+        Encoder _encoder;
         Motor _motor;
-        Sonar _ultrasonic;
-        Signals _feedback;
-        Line _lineFollower;
-        Obstacle _obstacleAvoidance;
+        Sonar _sonar;
+        Signals _signals;
+        Line _line;
+        Obstacle _obstacle;
         Gps _gps;
 
-        String _modo = "indefinido";
-        float _velocidadConstante = 0.0;
-        unsigned long _ultimaVezRecibido = 0;
-        unsigned long _ultimaVezLuces = 0;
+        String _mode = "indefinido";
+        float _speed = 0;
+        unsigned long _lastCommand = 0;
+        unsigned long _lastIndicator = 0;
 
-        static SmartCar* _instance;
+        static Car* _instance;
+
         static void onMessage(const char* topic, JsonDocument& doc);
         void handleMessage(const char* topic, JsonDocument& doc);
 };
