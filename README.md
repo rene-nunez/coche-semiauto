@@ -99,7 +99,6 @@ Abre [http://localhost:3000](http://localhost:3000). `npm run build` genera fron
 
 ## MQTT
 
-Prefijo de todos los tópicos: coche-semiauto/.
 El frontend publica comandos y escucha la ubicación; el firmware hace lo contrario.
 
 | Publicador | Suscriptor | Tópico | Ejemplo |
@@ -125,18 +124,6 @@ El frontend publica comandos y escucha la ubicación; el firmware hace lo contra
 | `sat` | Número de satélites |
 | `destino` | `true` al alcanzar el destino; el frontend reinicia la navegación |
 
-## Estructura
-
-```text
-.
-├── firmware/    # PlatformIO (env: coche-semiauto): include/, lib/, src/, platformio.ini
-├── frontend/    # Vite, Leaflet y MQTT
-├── mosquitto/   # mosquitto.conf
-├── assets/      # hardware.jpeg
-├── LICENSE
-└── README.md
-```
-
 ## Licencia
 
-MIT. Consulta [LICENSE](./LICENSE).
+Este proyecto se distribuye bajo los términos de la Licencia MIT. Consulta el archivo LICENSE [./LICENSE] para más información.
