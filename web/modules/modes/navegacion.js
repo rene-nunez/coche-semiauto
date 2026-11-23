@@ -8,7 +8,7 @@ const navegacion = {
     destino: null,
     ultimoDestino: null,
     marcadorD: null, // Marcador dinámico del destino
-    marcadorSC: null, // Marcador dinámico del Smart Car
+    marcadorSC: null, // Marcador dinámico del coche semiautónomo
     reinicioTimeout: null, // Temporizador de reinicio tras alcanzar el destino
     
     contenedor: null, // Interfaz del modo
@@ -23,7 +23,7 @@ const navegacion = {
         Estados de navegación:
             1. SIN_DESTINO: mapa creado, sin destino definido.
             2. DESTINO_SELECCIONADO: destino marcado, esperando confirmación de envío.
-            3. NAVEGANDO: el Smart Car está en movimiento.
+            3. NAVEGANDO: el coche semiautónomo está en movimiento.
             4. PAUSADO: detenido con un destino activo (el destino guardado se puede reanudar o cambiar).
     */
     estado: "SIN_DESTINO",
@@ -185,7 +185,7 @@ const navegacion = {
             `);
         }
         
-        // Actualizar la distancia al seleccionar un nuevo destino solo si el marcador del Smart Car ya existe
+        // Actualizar la distancia al seleccionar un nuevo destino solo si el marcador del coche semiautónomo ya existe
         if (this.marcadorSC) {
             const dist = latlng.distanceTo(this.marcadorSC.getLatLng());
             if (this.divDistancia) this.divDistancia.textContent = `${dist.toFixed(2)}m`;
@@ -256,10 +256,10 @@ const navegacion = {
             this.divDistancia.textContent = `${dist.toFixed(2)}m`;
         }
         
-        // Inicializar el marcador del Smart Car y su ventana emergente
+        // Inicializar el marcador del coche semiautónomo y su ventana emergente
         const popup = `
             <div class="text-xs font-mono leading-tight">
-                <div class="font-semibold tracking-wide mb-0.5">Smart Car</div>
+                <div class="font-semibold tracking-wide mb-0.5">Coche semiautónomo</div>
                 <div><span class="opacity-60">lat </span>${lat.toFixed(5)}</div>
                 <div><span class="opacity-60">lon </span>${lon.toFixed(5)}</div>
             </div>

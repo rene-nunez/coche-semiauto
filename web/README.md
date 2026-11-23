@@ -1,6 +1,6 @@
 # Control Web
 
-Interfaz web para el Smart Car: joystick y modos de asistencia, conectados al broker por MQTT sobre WebSockets. Los modos, tópicos y montaje del hardware están en el [README principal](../README.md).
+Interfaz web para el coche semiautónomo: joystick y modos de asistencia, conectados al broker por MQTT sobre WebSockets. Los modos, tópicos y montaje del hardware están en el [README principal](../README.md).
 
 ## Requisitos
 

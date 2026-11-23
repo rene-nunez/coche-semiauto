@@ -1,4 +1,4 @@
-# Smart Car
+# Coche semiautónomo
 
 Prototipo de vehículo **semiautónomo** con ESP32, controlado desde el navegador mediante MQTT. Puedes conducirlo con un joystick virtual o activar modos de asistencia (seguidor de línea, evasión de obstáculos y navegación GPS). Requiere supervisión humana en todo momento.
 
@@ -9,7 +9,7 @@ Prototipo de vehículo **semiautónomo** con ESP32, controlado desde el navegado
 El navegador se conecta al broker por MQTT sobre WebSockets y el ESP32 por MQTT sobre TCP. El broker reenvía comandos y estados entre ambos.
 
 ```text
-Navegador (Control Web) -- WebSocket :9001 --> Broker MQTT -- TCP :1883 --> Smart Car (ESP32)
+Navegador (Control Web) -- WebSocket :9001 --> Broker MQTT -- TCP :1883 --> Coche semiautónomo (ESP32)
 ```
 
 > Si usas otros puertos o TLS, actualiza la configuración del broker, del firmware y del Control Web. Los puertos mostrados son los de `mosquitto/mosquitto.conf`.
@@ -72,8 +72,8 @@ Necesitas [PlatformIO CLI](https://platformio.org/install/cli). Edita [src/confi
 ```cpp
 const char* ssid = "YOUR_SSID";
 const char* password = "YOUR_PASSWORD";
-const char* mqtt_server = "BROKER_HOST";
-const int port = 1883;
+const char* mqttHost = "BROKER_HOST";
+const int mqttPort = 1883;
 ```
 
 Luego compila y carga:
