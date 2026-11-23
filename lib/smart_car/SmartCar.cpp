@@ -35,7 +35,7 @@ void SmartCar::setup() {
     _gpsNavigation.iniciar();
     _motor.iniciar();
     _lineFollower.iniciar();
-    _ultrasonic.iniciar();
+    _ultrasonic.begin();
     _speedSensor.begin();
 }
 

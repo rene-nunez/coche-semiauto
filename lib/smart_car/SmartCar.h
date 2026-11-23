@@ -6,7 +6,7 @@
 #include "MQTTManager.h"
 #include "Encoder.h"
 #include "MotorDriver.h"
-#include "UltrasonicSensor.h"
+#include "Sonar.h"
 #include "FeedbackController.h"
 #include "LineFollower.h"
 #include "ObstacleAvoidance.h"
@@ -26,7 +26,7 @@ class SmartCar {
         MQTTManager _mqtt;
         Encoder _speedSensor;
         MotorDriver _motor;
-        UltrasonicSensor _ultrasonic;
+        Sonar _ultrasonic;
         FeedbackController _feedback;
         LineFollower _lineFollower;
         ObstacleAvoidance _obstacleAvoidance;

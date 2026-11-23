@@ -1,16 +1,15 @@
 #include "ObstacleAvoidance.h"
 #include "MotorDriver.h"
-#include "UltrasonicSensor.h"
+#include "Sonar.h"
 
-ObstacleAvoidance::ObstacleAvoidance(MotorDriver& motor, UltrasonicSensor& sonic)
+ObstacleAvoidance::ObstacleAvoidance(MotorDriver& motor, Sonar& sonic)
     : _motor(motor), _sonic(sonic) {}
 
 // Máquina de estados de 3 fases: avanzar, retroceder, girar y luego avanzar
 // Es el mínimo necesario para esquivar obstáculos sin atascarse: retroceder evita rozar el objeto, girar cambia el rumbo, avanzar retoma la marcha
 void ObstacleAvoidance::actualizar(float velocidadConstante) {
     // pulseIn timeout retorna 0 cuando no hay eco; se interpreta como "sin obstáculo" (400 cm está fuera del rango útil del HC-SR04)
-    float obstaculo = _sonic.leerFiltrado();
-    if (obstaculo == 0) obstaculo = 400;
+    float obstaculo = _sonic.readFiltered();
 
     unsigned long ahora = millis();
 
