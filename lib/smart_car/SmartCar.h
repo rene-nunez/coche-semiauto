@@ -8,7 +8,7 @@
 #include "Motor.h"
 #include "Sonar.h"
 #include "Signals.h"
-#include "LineFollower.h"
+#include "Line.h"
 #include "ObstacleAvoidance.h"
 #include "GPSNavigation.h"
 
@@ -28,7 +28,7 @@ class SmartCar {
         Motor _motor;
         Sonar _ultrasonic;
         Signals _feedback;
-        LineFollower _lineFollower;
+        Line _lineFollower;
         ObstacleAvoidance _obstacleAvoidance;
         GPSNavigation _gpsNavigation;
 

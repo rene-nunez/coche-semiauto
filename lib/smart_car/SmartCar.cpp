@@ -34,7 +34,7 @@ void SmartCar::setup() {
     _feedback.begin();
     _gpsNavigation.iniciar();
     _motor.begin();
-    _lineFollower.iniciar();
+    _lineFollower.begin();
     _ultrasonic.begin();
     _speedSensor.begin();
 }
@@ -76,7 +76,7 @@ void SmartCar::loop() {
     } else if (_modo == "seguidor") {
         // _velocidadConstante > 0 es la señal de que el web habilitó el modo (evita arranques no intencionados)
         if (_velocidadConstante > 0.0) {
-            _lineFollower.ejecutar(_velocidadConstante);
+            _lineFollower.follow(_velocidadConstante);
         } else {
             _motor.drive(0, 0);
         }
@@ -125,7 +125,7 @@ void SmartCar::handleMessage(const char* topic, JsonDocument& doc) {
         const char* accion = doc["accion"];
         bool activo = (accion && strcmp(accion, "activar") == 0);
         _velocidadConstante = activo ? 0.42 : 0.0;
-        _lineFollower.reiniciarMomentum();
+        _lineFollower.resetMomentum();
 
     } else if (strcmp(topic, topics.obstaculos) == 0) {
         const char* accion = doc["accion"];
