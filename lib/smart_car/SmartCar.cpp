@@ -11,7 +11,7 @@ SmartCar::SmartCar()
     , _feedback()
     , _lineFollower(_motor)
     , _obstacleAvoidance(_motor, _ultrasonic)
-    , _gpsNavigation(_motor, _mqtt, gpsRX, gpsTX)
+    , _gps(_motor, _mqtt, gpsRX, gpsTX)
 {
     // Instancia estática para que la callback libre de PubSubClient pueda reenviar el mensaje a handleMessage()
     _instance = this;
@@ -32,7 +32,7 @@ void SmartCar::setup() {
     Wire.setClock(400000);
 
     _feedback.begin();
-    _gpsNavigation.iniciar();
+    _gps.begin();
     _motor.begin();
     _lineFollower.begin();
     _ultrasonic.begin();
@@ -54,7 +54,7 @@ void SmartCar::loop() {
     if (!_mqtt.isConnected()) {
         _motor.drive(0, 0);
         _velocidadConstante = 0.0f;
-        _gpsNavigation.parar();
+        _gps.stop();
         _feedback.off();
     }
 
@@ -62,7 +62,7 @@ void SmartCar::loop() {
     _feedback.update();
 
     // GPS y encoders se actualizan continuamente independientemente del modo
-    _gpsNavigation.actualizar();
+    _gps.update();
     _speedSensor.read();
 
     if (_modo == "manual") {
@@ -87,8 +87,8 @@ void SmartCar::loop() {
             _motor.drive(0, 0);
         }
     } else if (_modo == "navegacion") {
-        if (_gpsNavigation.hasValidLocation() && _gpsNavigation.isActive()) {
-            _gpsNavigation.navegar();
+        if (_gps.hasFix() && _gps.isActive()) {
+            _gps.navigate();
         } else {
             _motor.drive(0, 0);
         }
@@ -116,7 +116,7 @@ void SmartCar::handleMessage(const char* topic, JsonDocument& doc) {
         if (nuevoModo) {
             _modo = String(nuevoModo);
             _velocidadConstante = 0.0;
-            _gpsNavigation.parar();
+            _gps.stop();
             _feedback.off();
             _feedback.confirmHorn();
             _feedback.setModeColor(nuevoModo);
@@ -138,12 +138,12 @@ void SmartCar::handleMessage(const char* topic, JsonDocument& doc) {
             if (strcmp(accion, "iniciar") == 0) {
                 double lat = doc["lat"] | 0.0;
                 double lon = doc["lon"] | 0.0;
-                _gpsNavigation.colocarDestino(lat, lon);
-                _gpsNavigation.avanzar();
+                _gps.setTarget(lat, lon);
+                _gps.start();
             } else if (strcmp(accion, "detener") == 0) {
-                _gpsNavigation.parar();
+                _gps.stop();
             } else if (strcmp(accion, "reanudar") == 0) {
-                _gpsNavigation.reanudar();
+                _gps.resume();
             }
         }
     } else if (strcmp(topic, topics.luces) == 0) {

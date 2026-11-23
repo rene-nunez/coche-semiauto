@@ -10,7 +10,7 @@
 #include "Signals.h"
 #include "Line.h"
 #include "Obstacle.h"
-#include "GPSNavigation.h"
+#include "Gps.h"
 
 #include <ArduinoJson.h>
 #include <Wire.h>
@@ -30,7 +30,7 @@ class SmartCar {
         Signals _feedback;
         Line _lineFollower;
         Obstacle _obstacleAvoidance;
-        GPSNavigation _gpsNavigation;
+        Gps _gps;
 
         String _modo = "indefinido";
         float _velocidadConstante = 0.0;
