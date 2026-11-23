@@ -3,18 +3,18 @@
 
 #include "config.h"
 
-class MotorDriver;
+class Motor;
 
 class LineFollower {
     public:
-        LineFollower(MotorDriver& motor);
+        LineFollower(Motor& motor);
 
         void iniciar();
         void ejecutar(float velocidadConstante);
         void reiniciarMomentum();
 
     private:
-        MotorDriver& _motor;
+        Motor& _motor;
 
         static constexpr float kP = 1.00f;
         static constexpr float kD = 0.55f;

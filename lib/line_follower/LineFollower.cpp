@@ -1,7 +1,7 @@
 #include "LineFollower.h"
-#include "MotorDriver.h"
+#include "Motor.h"
 
-LineFollower::LineFollower(MotorDriver& motor) : _motor(motor) {}
+LineFollower::LineFollower(Motor& motor) : _motor(motor) {}
 
 void LineFollower::iniciar() {
     pinMode(pinS1, INPUT);
@@ -61,11 +61,11 @@ void LineFollower::ejecutar(float velocidadConstante) {
 
         _errorAnterior = error;
 
-        _motor.conducir(constrain(_momentum, -1.0f, 1.0f), velActual);
+        _motor.drive(constrain(_momentum, -1.0f, 1.0f), velActual);
     } else {
         // Sin sensores en línea: usar momentum para seguir la dirección previa a media velocidad
         float factorDecay = expf(-dt / kTiempoDecay_ms);
         _momentum *= factorDecay;
-        _motor.conducir(constrain(_momentum * 0.5f, -1.0f, 1.0f), velocidadConstante * 0.5f);
+        _motor.drive(constrain(_momentum * 0.5f, -1.0f, 1.0f), velocidadConstante * 0.5f);
     }
 }

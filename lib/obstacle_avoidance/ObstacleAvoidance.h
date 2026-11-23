@@ -3,17 +3,17 @@
 
 #include "config.h"
 
-class MotorDriver;
+class Motor;
 class Sonar;
 
 class ObstacleAvoidance {
     public:
-        ObstacleAvoidance(MotorDriver& motor, Sonar& sonic);
+        ObstacleAvoidance(Motor& motor, Sonar& sonic);
 
         void actualizar(float velocidadConstante);
 
     private:
-        MotorDriver& _motor;
+        Motor& _motor;
         Sonar& _sonic;
 
         enum State { AVANZAR, RETROCEDER, GIRAR };

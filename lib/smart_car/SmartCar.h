@@ -5,7 +5,7 @@
 #include "Wifi.h"
 #include "Mqtt.h"
 #include "Encoder.h"
-#include "MotorDriver.h"
+#include "Motor.h"
 #include "Sonar.h"
 #include "FeedbackController.h"
 #include "LineFollower.h"
@@ -25,7 +25,7 @@ class SmartCar {
         Wifi _wifi;
         Mqtt _mqtt;
         Encoder _speedSensor;
-        MotorDriver _motor;
+        Motor _motor;
         Sonar _ultrasonic;
         FeedbackController _feedback;
         LineFollower _lineFollower;

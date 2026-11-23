@@ -15,7 +15,7 @@ SmartCar::SmartCar()
 {
     // Instancia estática para que la callback libre de PubSubClient pueda reenviar el mensaje a handleMessage()
     _instance = this;
-    _motor.asignarSensorVelocidad(&_speedSensor);
+    _motor.setEncoder(&_speedSensor);
 }
 
 void SmartCar::setup() {
@@ -33,7 +33,7 @@ void SmartCar::setup() {
 
     _feedback.iniciar();
     _gpsNavigation.iniciar();
-    _motor.iniciar();
+    _motor.begin();
     _lineFollower.iniciar();
     _ultrasonic.begin();
     _speedSensor.begin();
@@ -52,7 +52,7 @@ void SmartCar::loop() {
     // Sin conexión MQTT no hay forma de detener el vehículo de forma remota:
     // se detiene y se desactivan los modos de asistencia hasta que el usuario los reactive.
     if (!_mqtt.isConnected()) {
-        _motor.conducir(0, 0);
+        _motor.drive(0, 0);
         _velocidadConstante = 0.0f;
         _gpsNavigation.parar();
         _feedback.apagar();
@@ -68,7 +68,7 @@ void SmartCar::loop() {
     if (_modo == "manual") {
         // Timeout de seguridad: si no llega comando manual en 500 ms, detener el auto
         if (millis() - _ultimaVezRecibido > 500) {
-            _motor.conducir(0, 0);
+            _motor.drive(0, 0);
         }
         if (millis() - _ultimaVezLuces > timeoutLuces) {
             _feedback.apagar();
@@ -78,22 +78,22 @@ void SmartCar::loop() {
         if (_velocidadConstante > 0.0) {
             _lineFollower.ejecutar(_velocidadConstante);
         } else {
-            _motor.conducir(0, 0);
+            _motor.drive(0, 0);
         }
     } else if (_modo == "obstaculos") {
         if (_velocidadConstante > 0.0) {
             _obstacleAvoidance.actualizar(_velocidadConstante);
         } else {
-            _motor.conducir(0, 0);
+            _motor.drive(0, 0);
         }
     } else if (_modo == "navegacion") {
         if (_gpsNavigation.hasValidLocation() && _gpsNavigation.isActive()) {
             _gpsNavigation.navegar();
         } else {
-            _motor.conducir(0, 0);
+            _motor.drive(0, 0);
         }
     } else {
-        _motor.conducir(0, 0);
+        _motor.drive(0, 0);
     }
 }
 
@@ -108,8 +108,8 @@ void SmartCar::handleMessage(const char* topic, JsonDocument& doc) {
         _ultimaVezRecibido = millis();
         float valorX = doc["x"] | 0.0f;
         float valorY = doc["y"] | 0.0f;
-        _motor.conducir(valorX, valorY);
-        _feedback.preventiva(valorY, MotorDriver::ZONA_MUERTA);
+        _motor.drive(valorX, valorY);
+        _feedback.preventiva(valorY, Motor::DEAD_ZONE);
 
     } else if (strcmp(topic, topics.modo) == 0) {
         const char* nuevoModo = doc["modo"];

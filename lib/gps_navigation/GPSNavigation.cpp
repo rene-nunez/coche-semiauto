@@ -1,8 +1,8 @@
 #include "GPSNavigation.h"
-#include "MotorDriver.h"
+#include "Motor.h"
 #include "Mqtt.h"
 
-GPSNavigation::GPSNavigation(MotorDriver& motor, Mqtt& mqtt, int rx, int tx)
+GPSNavigation::GPSNavigation(Motor& motor, Mqtt& mqtt, int rx, int tx)
     : _motor(motor), _mqtt(mqtt), _serialGPS(2), _rxPin(rx), _txPin(tx) {}
 
 void GPSNavigation::iniciar() {
@@ -69,7 +69,7 @@ void GPSNavigation::navegar() {
                 _primeraLecturaRealizada = true;
             } else {
                 // Sin señal GPS, avanzar lentamente a la espera de recuperar la señal
-                _motor.conducir(0.0, 0.45);
+                _motor.drive(0.0, 0.45);
             }
         }
 
@@ -80,7 +80,7 @@ void GPSNavigation::navegar() {
                 _correccionAplicada = true;
             }
         } else {
-            _motor.conducir(0.0, 0.45);
+            _motor.drive(0.0, 0.45);
         }
     } else {
         terminar();
@@ -110,14 +110,14 @@ void GPSNavigation::corregirOrientacion(double actual, double destino) {
     float giro = (abs(_errorRumbo) < 30) ? 0.0 : constrain(_errorRumbo / 90.0, -0.20, 0.20);
     float velocidad = (abs(_errorRumbo) > 45) ? 0.25 : 0.45;
 
-    _motor.conducir(giro, velocidad);
+    _motor.drive(giro, velocidad);
 }
 
 void GPSNavigation::terminar() {
     _estadoNav = false;
     _errorRumbo = 0.0;
 
-    _motor.conducir(0, 0);
+    _motor.drive(0, 0);
 
     if (_mqtt.isConnected()) {
         JsonDocument doc;
@@ -146,7 +146,7 @@ void GPSNavigation::avanzar() {
 
 void GPSNavigation::parar() {
     _estadoNav = false;
-    _motor.conducir(0, 0);
+    _motor.drive(0, 0);
 }
 
 void GPSNavigation::reanudar() {

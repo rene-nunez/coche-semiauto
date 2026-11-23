@@ -1,8 +1,8 @@
 #include "ObstacleAvoidance.h"
-#include "MotorDriver.h"
+#include "Motor.h"
 #include "Sonar.h"
 
-ObstacleAvoidance::ObstacleAvoidance(MotorDriver& motor, Sonar& sonic)
+ObstacleAvoidance::ObstacleAvoidance(Motor& motor, Sonar& sonic)
     : _motor(motor), _sonic(sonic) {}
 
 // Máquina de estados de 3 fases: avanzar, retroceder, girar y luego avanzar
@@ -37,16 +37,16 @@ void ObstacleAvoidance::actualizar(float velocidadConstante) {
 
     switch (_estado) {
         case AVANZAR:
-            _motor.conducir(0, velocidadConstante);
+            _motor.drive(0, velocidadConstante);
             break;
 
         case RETROCEDER:
-            _motor.conducir(0, velocidadConstante * -1);
+            _motor.drive(0, velocidadConstante * -1);
             break;
 
         case GIRAR:
             // Giro suave combinando avance lento + dirección para que el giro sea amplio y no pivote sobre el mismo punto
-            _motor.conducir(0.20f, 0.25f);
+            _motor.drive(0.20f, 0.25f);
             break;
     }
 }

@@ -5,12 +5,12 @@
 #include <TinyGPS++.h>
 #include <HardwareSerial.h>
 
-class MotorDriver;
+class Motor;
 class Mqtt;
 
 class GPSNavigation {
     public:
-        GPSNavigation(MotorDriver& motor, Mqtt& mqtt, int rx, int tx);
+        GPSNavigation(Motor& motor, Mqtt& mqtt, int rx, int tx);
 
         void iniciar();
         void actualizar();
@@ -26,7 +26,7 @@ class GPSNavigation {
         bool hasValidLocation() const;
 
     private:
-        MotorDriver& _motor;
+        Motor& _motor;
         Mqtt& _mqtt;
         HardwareSerial _serialGPS;
         TinyGPSPlus _gps;
