@@ -31,7 +31,7 @@ void SmartCar::setup() {
     Wire.begin(21, 22);
     Wire.setClock(400000);
 
-    _feedback.iniciar();
+    _feedback.begin();
     _gpsNavigation.iniciar();
     _motor.begin();
     _lineFollower.iniciar();
@@ -55,11 +55,11 @@ void SmartCar::loop() {
         _motor.drive(0, 0);
         _velocidadConstante = 0.0f;
         _gpsNavigation.parar();
-        _feedback.apagar();
+        _feedback.off();
     }
 
     // El claxon y las luces de freno usan temporizadores no bloqueantes
-    _feedback.actualizar();
+    _feedback.update();
 
     // GPS y encoders se actualizan continuamente independientemente del modo
     _gpsNavigation.actualizar();
@@ -71,7 +71,7 @@ void SmartCar::loop() {
             _motor.drive(0, 0);
         }
         if (millis() - _ultimaVezLuces > timeoutLuces) {
-            _feedback.apagar();
+            _feedback.off();
         }
     } else if (_modo == "seguidor") {
         // _velocidadConstante > 0 es la señal de que el web habilitó el modo (evita arranques no intencionados)
@@ -109,7 +109,7 @@ void SmartCar::handleMessage(const char* topic, JsonDocument& doc) {
         float valorX = doc["x"] | 0.0f;
         float valorY = doc["y"] | 0.0f;
         _motor.drive(valorX, valorY);
-        _feedback.preventiva(valorY, Motor::DEAD_ZONE);
+        _feedback.brake(valorY, Motor::DEAD_ZONE);
 
     } else if (strcmp(topic, topics.modo) == 0) {
         const char* nuevoModo = doc["modo"];
@@ -117,9 +117,9 @@ void SmartCar::handleMessage(const char* topic, JsonDocument& doc) {
             _modo = String(nuevoModo);
             _velocidadConstante = 0.0;
             _gpsNavigation.parar();
-            _feedback.apagar();
-            _feedback.claxonConfirmar();
-            _feedback.ledModo(nuevoModo);
+            _feedback.off();
+            _feedback.confirmHorn();
+            _feedback.setModeColor(nuevoModo);
         }
     } else if (strcmp(topic, topics.seguidor) == 0) {
         const char* accion = doc["accion"];
@@ -149,12 +149,12 @@ void SmartCar::handleMessage(const char* topic, JsonDocument& doc) {
     } else if (strcmp(topic, topics.luces) == 0) {
         const char* tipo = doc["tipo"] | "off";
         _ultimaVezLuces = millis();
-        _feedback.direccional(tipo);
+        _feedback.indicator(tipo);
 
     } else if (strcmp(topic, topics.claxon) == 0) {
         int estado = doc["estado"] | 1;
         if (estado != 0) {
-            _feedback.claxon();
+            _feedback.horn();
         }
     }
 }

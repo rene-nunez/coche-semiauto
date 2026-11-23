@@ -7,7 +7,7 @@
 #include "Encoder.h"
 #include "Motor.h"
 #include "Sonar.h"
-#include "FeedbackController.h"
+#include "Signals.h"
 #include "LineFollower.h"
 #include "ObstacleAvoidance.h"
 #include "GPSNavigation.h"
@@ -27,7 +27,7 @@ class SmartCar {
         Encoder _speedSensor;
         Motor _motor;
         Sonar _ultrasonic;
-        FeedbackController _feedback;
+        Signals _feedback;
         LineFollower _lineFollower;
         ObstacleAvoidance _obstacleAvoidance;
         GPSNavigation _gpsNavigation;
