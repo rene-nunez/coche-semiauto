@@ -89,13 +89,13 @@ Las librerías se instalan solas: PubSubClient `^2.8.0`, TinyGPSPlus `^1.1.0`, P
 ### 3. Control Web
 
 ```bash
-cd web
+cd frontend
 npm ci
 cp .env.example .env   # configura host, puerto y ruta WebSocket del broker
 npm run dev
 ```
 
-Abre `http://localhost:3000`. Para generar los archivos de producción usa `npm run build` (salida en `web/dist`). Consulta [web/README.md](./web/README.md) para más detalles.
+Abre `http://localhost:3000`. Para generar los archivos de producción usa `npm run build` (salida en `frontend/dist`). Consulta [frontend/README.md](./frontend/README.md) para más detalles.
 
 ### 4. Uso
 
