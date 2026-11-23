@@ -7,14 +7,14 @@ const char* mqttHost = "BROKER_HOST";
 const int mqttPort = 1883;
 
 const Topics topics = {
-    .manual = "smartcar/modo/manual",
-    .line = "smartcar/modo/seguidor",
-    .obstacle = "smartcar/modo/obstaculos",
-    .navigation = "smartcar/modo/navegacion",
-    .mode = "smartcar/accion/modo",
-    .horn = "smartcar/accion/claxon",
-    .lights = "smartcar/accion/luces",
-    .location = "smartcar/estado/ubicacion"
+    .manual = "coche-semiauto/modo/manual",
+    .line = "coche-semiauto/modo/seguidor",
+    .obstacle = "coche-semiauto/modo/obstaculos",
+    .navigation = "coche-semiauto/modo/navegacion",
+    .mode = "coche-semiauto/accion/modo",
+    .horn = "coche-semiauto/accion/claxon",
+    .lights = "coche-semiauto/accion/luces",
+    .location = "coche-semiauto/estado/ubicacion"
 };
 
 const int motorA1 = 18;

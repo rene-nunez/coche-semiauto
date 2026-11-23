@@ -28,7 +28,7 @@ void Mqtt::connect() {
     firstAttempt = false;
     lastAttempt = now;
 
-    String clientId = "smartcar-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+    String clientId = "coche-semiauto-" + String((uint32_t)ESP.getEfuseMac(), HEX);
     if (!_client.connect(clientId.c_str())) return;
 
     _client.subscribe(topics.manual);

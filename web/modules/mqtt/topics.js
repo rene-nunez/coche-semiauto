@@ -1,18 +1,18 @@
 export const topics = {
     modo: {
-        manual: "smartcar/modo/manual",
-        seguidor: "smartcar/modo/seguidor",
-        obstaculos: "smartcar/modo/obstaculos",
-        navegacion: "smartcar/modo/navegacion"
+        manual: "coche-semiauto/modo/manual",
+        seguidor: "coche-semiauto/modo/seguidor",
+        obstaculos: "coche-semiauto/modo/obstaculos",
+        navegacion: "coche-semiauto/modo/navegacion"
     },
 
     accion: {
-        modo: "smartcar/accion/modo",
-        claxon: "smartcar/accion/claxon",
-        luces: "smartcar/accion/luces"      
+        modo: "coche-semiauto/accion/modo",
+        claxon: "coche-semiauto/accion/claxon",
+        luces: "coche-semiauto/accion/luces"      
     },
 
     estado: {
-        ubicacion: "smartcar/estado/ubicacion"
+        ubicacion: "coche-semiauto/estado/ubicacion"
     }
 }

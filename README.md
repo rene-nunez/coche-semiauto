@@ -109,14 +109,14 @@ El Control Web publica comandos y escucha estados; el ESP32 hace lo contrario.
 
 | Publicador | Suscriptor | Tópico | Ejemplo |
 |:---|:---|:---|:---|
-| Web | ESP32 | `smartcar/accion/modo` | `{"modo":"manual"}` |
-| Web | ESP32 | `smartcar/modo/manual` | `{"x":0.5,"y":0.3}` |
-| Web | ESP32 | `smartcar/accion/luces` | `{"tipo":"izq"}` |
-| Web | ESP32 | `smartcar/accion/claxon` | `{"estado":1}` |
-| Web | ESP32 | `smartcar/modo/seguidor` | `{"accion":"activar"}` |
-| Web | ESP32 | `smartcar/modo/obstaculos` | `{"accion":"activar"}` |
-| Web | ESP32 | `smartcar/modo/navegacion` | `{"accion":"iniciar","lat":19.24,"lon":-103.69}` |
-| ESP32 | Web | `smartcar/estado/ubicacion` | `{"lat":19.24,"lon":-103.69,"error":40,"sat":4,"destino":false}` |
+| Web | ESP32 | `coche-semiauto/accion/modo` | `{"modo":"manual"}` |
+| Web | ESP32 | `coche-semiauto/modo/manual` | `{"x":0.5,"y":0.3}` |
+| Web | ESP32 | `coche-semiauto/accion/luces` | `{"tipo":"izq"}` |
+| Web | ESP32 | `coche-semiauto/accion/claxon` | `{"estado":1}` |
+| Web | ESP32 | `coche-semiauto/modo/seguidor` | `{"accion":"activar"}` |
+| Web | ESP32 | `coche-semiauto/modo/obstaculos` | `{"accion":"activar"}` |
+| Web | ESP32 | `coche-semiauto/modo/navegacion` | `{"accion":"iniciar","lat":19.24,"lon":-103.69}` |
+| ESP32 | Web | `coche-semiauto/estado/ubicacion` | `{"lat":19.24,"lon":-103.69,"error":40,"sat":4,"destino":false}` |
 
 | Campo | Valores o rango |
 |:---|:---|
