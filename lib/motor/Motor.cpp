@@ -6,15 +6,15 @@ int Motor::_lastPwm[16] = {-1};
 Motor::Motor() {}
 
 void Motor::begin() {
-    ledcSetup(canalA1, freq, resolucion);
-    ledcSetup(canalA2, freq, resolucion);
-    ledcSetup(canalB1, freq, resolucion);
-    ledcSetup(canalB2, freq, resolucion);
+    ledcSetup(channelA1, pwmFrequency, pwmResolution);
+    ledcSetup(channelA2, pwmFrequency, pwmResolution);
+    ledcSetup(channelB1, pwmFrequency, pwmResolution);
+    ledcSetup(channelB2, pwmFrequency, pwmResolution);
 
-    ledcAttachPin(motorA1, canalA1);
-    ledcAttachPin(motorA2, canalA2);
-    ledcAttachPin(motorB1, canalB1);
-    ledcAttachPin(motorB2, canalB2);
+    ledcAttachPin(motorA1, channelA1);
+    ledcAttachPin(motorA2, channelA2);
+    ledcAttachPin(motorB1, channelB1);
+    ledcAttachPin(motorB2, channelB2);
 }
 
 void Motor::setEncoder(Encoder* encoder) {
@@ -97,8 +97,8 @@ void Motor::drive(float x, float y) {
         }
     }
 
-    applyDirection(left, pwm(left), canalA1, canalA2);
-    applyDirection(right, pwm(right), canalB1, canalB2);
+    applyDirection(left, pwm(left), channelA1, channelA2);
+    applyDirection(right, pwm(right), channelB1, channelB2);
 }
 
 void Motor::stop() {

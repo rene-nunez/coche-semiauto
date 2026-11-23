@@ -3,76 +3,46 @@
 
 #include <Arduino.h>
 
-// WiFi
 extern const char* ssid;
 extern const char* password;
 
-// MQTT
-extern const char* mqtt_server;
-extern const int port;
+extern const char* mqttHost;
+extern const int mqttPort;
 
 struct Topics {
     const char* manual;
-    const char* seguidor;
-    const char* obstaculos;
-    const char* navegacion;
-    const char* modo;
-    const char* claxon;
-    const char* luces;
-    const char* ubicacion;
+    const char* line;
+    const char* obstacle;
+    const char* navigation;
+    const char* mode;
+    const char* horn;
+    const char* lights;
+    const char* location;
 };
 extern const Topics topics;
 
-// DRV8833 motor
-extern const int motorA1;
-extern const int motorA2;
-extern const int motorB1;
-extern const int motorB2;
+extern const int motorA1, motorA2, motorB1, motorB2;
+extern const int channelA1, channelA2, channelB1, channelB2, channelBuzzer;
+extern const int pwmFrequency, pwmResolution;
 
-// LEDC channels
-extern const int canalA1;
-extern const int canalA2;
-extern const int canalB1;
-extern const int canalB2;
-extern const int canalBuzzer;
-extern const int freq;
-extern const int resolucion;
+extern const int buzzerPin, buzzerFrequency;
 
-// Buzzer
-extern const int pinBuzzer;
-extern const int freqBuzzer;
+extern const int trigPin, echoPin;
+extern const int linePin1, linePin2, linePin3, linePin4, linePin5;
+extern const int encoderPinLeft, encoderPinRight;
+extern const int gpsRx, gpsTx;
 
-// HC-SR04
-extern const int trig;
-extern const int echo;
-
-// TCRT5000 array
-extern const int pinS1;
-extern const int pinS2;
-extern const int pinS3;
-extern const int pinS4;
-extern const int pinS5;
-
-// FC-03 encoders
-extern const int sensorVelDer;
-extern const int sensorVelIzq;
-
-// Neo-6M GPS
-extern const int gpsRX;
-extern const int gpsTX;
-
-// LED config
-struct ConfigLuces {
-    int pinR, pinG, pinB;
-    int pinLedDer, pinLedIzq;
-    int pinFrenoDer, pinFrenoIzq;
-    int colorManual[3];
-    int colorSeguidor[3];
-    int colorObstaculos[3];
-    int colorNavegacion[3];
-    int colorNull[3];
+struct LightConfig {
+    int redPin, greenPin, bluePin;
+    int rightPin, leftPin;
+    int brakeRightPin, brakeLeftPin;
+    int manualColor[3];
+    int lineColor[3];
+    int obstacleColor[3];
+    int navigationColor[3];
+    int offColor[3];
 };
-extern const ConfigLuces lucesConf;
-extern const unsigned long timeoutLuces;
+extern const LightConfig lights;
+extern const unsigned long lightsTimeout;
 
 #endif

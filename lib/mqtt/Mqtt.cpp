@@ -32,12 +32,12 @@ void Mqtt::connect() {
     if (!_client.connect(clientId.c_str())) return;
 
     _client.subscribe(topics.manual);
-    _client.subscribe(topics.seguidor);
-    _client.subscribe(topics.obstaculos);
-    _client.subscribe(topics.navegacion);
-    _client.subscribe(topics.modo);
-    _client.subscribe(topics.claxon);
-    _client.subscribe(topics.luces);
+    _client.subscribe(topics.line);
+    _client.subscribe(topics.obstacle);
+    _client.subscribe(topics.navigation);
+    _client.subscribe(topics.mode);
+    _client.subscribe(topics.horn);
+    _client.subscribe(topics.lights);
 }
 
 void Mqtt::loop() {

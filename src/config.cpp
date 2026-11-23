@@ -2,18 +2,19 @@
 
 const char* ssid = "YOUR_SSID";
 const char* password = "YOUR_PASSWORD";
-const char* mqtt_server = "BROKER_HOST";
-const int port = 1883;
+
+const char* mqttHost = "BROKER_HOST";
+const int mqttPort = 1883;
 
 const Topics topics = {
     .manual = "smartcar/modo/manual",
-    .seguidor = "smartcar/modo/seguidor",
-    .obstaculos = "smartcar/modo/obstaculos",
-    .navegacion = "smartcar/modo/navegacion",
-    .modo = "smartcar/accion/modo",
-    .claxon = "smartcar/accion/claxon",
-    .luces = "smartcar/accion/luces",
-    .ubicacion = "smartcar/estado/ubicacion"
+    .line = "smartcar/modo/seguidor",
+    .obstacle = "smartcar/modo/obstaculos",
+    .navigation = "smartcar/modo/navegacion",
+    .mode = "smartcar/accion/modo",
+    .horn = "smartcar/accion/claxon",
+    .lights = "smartcar/accion/luces",
+    .location = "smartcar/estado/ubicacion"
 };
 
 const int motorA1 = 18;
@@ -21,46 +22,46 @@ const int motorA2 = 19;
 const int motorB1 = 13;
 const int motorB2 = 4;
 
-const int canalA1 = 0;
-const int canalA2 = 1;
-const int canalB1 = 2;
-const int canalB2 = 3;
-const int canalBuzzer = 4;
+const int channelA1 = 0;
+const int channelA2 = 1;
+const int channelB1 = 2;
+const int channelB2 = 3;
+const int channelBuzzer = 4;
 
-const int freq = 5000;
-const int resolucion = 8;
+const int pwmFrequency = 5000;
+const int pwmResolution = 8;
 
-const int pinBuzzer = 5;
-const int freqBuzzer = 2000;
+const int buzzerPin = 5;
+const int buzzerFrequency = 2000;
 
-const int trig = 14;
-const int echo = 23;
+const int trigPin = 14;
+const int echoPin = 23;
 
-const int pinS1 = 32;
-const int pinS2 = 33;
-const int pinS3 = 25;
-const int pinS4 = 26;
-const int pinS5 = 27;
+const int linePin1 = 32;
+const int linePin2 = 33;
+const int linePin3 = 25;
+const int linePin4 = 26;
+const int linePin5 = 27;
 
-const int sensorVelDer = 34;
-const int sensorVelIzq = 35;
+const int encoderPinLeft = 34;
+const int encoderPinRight = 35;
 
-const int gpsRX = 16;
-const int gpsTX = 17;
+const int gpsRx = 16;
+const int gpsTx = 17;
 
-const ConfigLuces lucesConf {
-    .pinR = 0,
-    .pinG = 1,
-    .pinB = 2,
-    .pinLedDer = 4,
-    .pinLedIzq = 3,
-    .pinFrenoDer = 5,
-    .pinFrenoIzq = 6,
-    .colorManual = {1, 0, 1},
-    .colorSeguidor = {0, 1, 0},
-    .colorObstaculos = {1, 0, 0},
-    .colorNavegacion = {1, 1, 0},
-    .colorNull = {0, 0, 0}
+const LightConfig lights {
+    .redPin = 0,
+    .greenPin = 1,
+    .bluePin = 2,
+    .rightPin = 4,
+    .leftPin = 3,
+    .brakeRightPin = 5,
+    .brakeLeftPin = 6,
+    .manualColor = {1, 0, 1},
+    .lineColor = {0, 1, 0},
+    .obstacleColor = {1, 0, 0},
+    .navigationColor = {1, 1, 0},
+    .offColor = {0, 0, 0}
 };
 
-const unsigned long timeoutLuces = 3000;
+const unsigned long lightsTimeout = 3000;

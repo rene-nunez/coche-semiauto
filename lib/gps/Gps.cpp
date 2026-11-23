@@ -25,7 +25,7 @@ void Gps::update() {
         doc["error"] = _headingError;
         doc["sat"] = _satellites;
         doc["destino"] = false;
-        _mqtt.publish(topics.ubicacion, doc);
+        _mqtt.publish(topics.location, doc);
         _lastPublish = millis();
     }
 }
@@ -107,7 +107,7 @@ void Gps::finish() {
     doc["error"] = _headingError;
     doc["sat"] = _satellites;
     doc["destino"] = true;
-    _mqtt.publish(topics.ubicacion, doc);
+    _mqtt.publish(topics.location, doc);
 }
 
 void Gps::setTarget(double lat, double lon) {

@@ -20,7 +20,7 @@ class Signals {
 
     private:
         PCF8574 _pcf{0x20};
-        int _buzzerChannel = canalBuzzer;
+        int _buzzerChannel = channelBuzzer;
 
         void rgb(const int color[3]);
         void updateBrake();

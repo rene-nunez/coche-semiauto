@@ -17,10 +17,10 @@ void Signals::begin() {
     if (!_pcf.begin(0xFF)) {
         Serial.println(F("PCF8574 no detectado en la dirección 0x20"));
     }
-    rgb(lucesConf.colorNull);
+    rgb(lights.offColor);
 
-    ledcSetup(_buzzerChannel, freqBuzzer, resolucion);
-    ledcAttachPin(pinBuzzer, _buzzerChannel);
+    ledcSetup(_buzzerChannel, buzzerFrequency, pwmResolution);
+    ledcAttachPin(buzzerPin, _buzzerChannel);
 }
 
 // El tono se avanza desde update(): delays aquí bloquearían MQTT y el watchdog.
@@ -50,17 +50,17 @@ void Signals::confirmHorn() {
 }
 
 void Signals::rgb(const int color[3]) {
-    _pcf.write(lucesConf.pinR, color[0]);
-    _pcf.write(lucesConf.pinG, color[1]);
-    _pcf.write(lucesConf.pinB, color[2]);
+    _pcf.write(lights.redPin, color[0]);
+    _pcf.write(lights.greenPin, color[1]);
+    _pcf.write(lights.bluePin, color[2]);
 }
 
 void Signals::setModeColor(const String& mode) {
-    if (mode == "manual") rgb(lucesConf.colorManual);
-    else if (mode == "seguidor") rgb(lucesConf.colorSeguidor);
-    else if (mode == "obstaculos") rgb(lucesConf.colorObstaculos);
-    else if (mode == "navegacion") rgb(lucesConf.colorNavegacion);
-    else rgb(lucesConf.colorNull);
+    if (mode == "manual") rgb(lights.manualColor);
+    else if (mode == "seguidor") rgb(lights.lineColor);
+    else if (mode == "obstaculos") rgb(lights.obstacleColor);
+    else if (mode == "navegacion") rgb(lights.navigationColor);
+    else rgb(lights.offColor);
 }
 
 // La web repite el mismo tipo cada 500 ms para producir el parpadeo.
@@ -91,24 +91,24 @@ void Signals::indicator(const char* command) {
     }
 
     // PCF8574: LOW enciende el LED.
-    _pcf.write(lucesConf.pinLedDer, _rightOn ? LOW : HIGH);
-    _pcf.write(lucesConf.pinLedIzq, _leftOn ? LOW : HIGH);
+    _pcf.write(lights.rightPin, _rightOn ? LOW : HIGH);
+    _pcf.write(lights.leftPin, _leftOn ? LOW : HIGH);
 }
 
 void Signals::off() {
     if (_rightOn || _leftOn) {
         _rightOn = false;
         _leftOn = false;
-        _pcf.write(lucesConf.pinLedDer, HIGH);
-        _pcf.write(lucesConf.pinLedIzq, HIGH);
+        _pcf.write(lights.rightPin, HIGH);
+        _pcf.write(lights.leftPin, HIGH);
     }
 
     if (_brakeSeen || _brakeOn) {
         _brakeSeen = false;
         _brakeOn = false;
         _lastSpeed = 0;
-        _pcf.write(lucesConf.pinFrenoDer, HIGH);
-        _pcf.write(lucesConf.pinFrenoIzq, HIGH);
+        _pcf.write(lights.brakeRightPin, HIGH);
+        _pcf.write(lights.brakeLeftPin, HIGH);
     }
 }
 
@@ -128,8 +128,8 @@ void Signals::updateBrake() {
     if (on == _brakeOn) return;
     if (millis() - _lastWrite <= WRITE_DELAY_MS) return;
 
-    _pcf.write(lucesConf.pinFrenoDer, on ? LOW : HIGH);
-    _pcf.write(lucesConf.pinFrenoIzq, on ? LOW : HIGH);
+    _pcf.write(lights.brakeRightPin, on ? LOW : HIGH);
+    _pcf.write(lights.brakeLeftPin, on ? LOW : HIGH);
     _brakeOn = on;
     _lastWrite = millis();
     if (!on) _brakeSeen = false;

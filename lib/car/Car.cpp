@@ -8,14 +8,14 @@ Car* Car::_instance = nullptr;
 
 Car::Car()
     : _wifi(ssid, password)
-    , _mqtt(mqtt_server, port)
-    , _encoder(sensorVelIzq, sensorVelDer)
+    , _mqtt(mqttHost, mqttPort)
+    , _encoder(encoderPinLeft, encoderPinRight)
     , _motor()
-    , _sonar(trig, echo)
+    , _sonar(trigPin, echoPin)
     , _signals()
     , _line(_motor)
     , _obstacle(_motor, _sonar)
-    , _gps(_motor, _mqtt, gpsRX, gpsTX) {
+    , _gps(_motor, _mqtt, gpsRx, gpsTx) {
     _instance = this;
     _motor.setEncoder(&_encoder);
 }
@@ -60,7 +60,7 @@ void Car::loop() {
 
     if (_mode == "manual") {
         if (millis() - _lastCommand > COMMAND_TIMEOUT_MS) stop();
-        if (millis() - _lastIndicator > timeoutLuces) _signals.off();
+        if (millis() - _lastIndicator > lightsTimeout) _signals.off();
     } else if (_mode == "seguidor") {
         if (_speed > 0) _line.follow(_speed);
         else stop();
@@ -94,7 +94,7 @@ void Car::handleMessage(const char* topic, JsonDocument& doc) {
         _motor.drive(x, y);
         _signals.brake(y, Motor::DEAD_ZONE);
 
-    } else if (strcmp(topic, topics.modo) == 0) {
+    } else if (strcmp(topic, topics.mode) == 0) {
         const char* mode = doc["modo"];
         if (!mode) return;
         _mode = String(mode);
@@ -102,18 +102,18 @@ void Car::handleMessage(const char* topic, JsonDocument& doc) {
         _signals.confirmHorn();
         _signals.setModeColor(mode);
 
-    } else if (strcmp(topic, topics.seguidor) == 0) {
+    } else if (strcmp(topic, topics.line) == 0) {
         const char* action = doc["accion"];
         bool active = action && strcmp(action, "activar") == 0;
         _speed = active ? 0.42 : 0;
         _line.resetMomentum();
 
-    } else if (strcmp(topic, topics.obstaculos) == 0) {
+    } else if (strcmp(topic, topics.obstacle) == 0) {
         const char* action = doc["accion"];
         bool active = action && strcmp(action, "activar") == 0;
         _speed = active ? 0.45 : 0;
 
-    } else if (strcmp(topic, topics.navegacion) == 0) {
+    } else if (strcmp(topic, topics.navigation) == 0) {
         const char* action = doc["accion"];
         if (!action) return;
         if (strcmp(action, "iniciar") == 0) {
@@ -127,12 +127,12 @@ void Car::handleMessage(const char* topic, JsonDocument& doc) {
             _gps.resume();
         }
 
-    } else if (strcmp(topic, topics.luces) == 0) {
+    } else if (strcmp(topic, topics.lights) == 0) {
         const char* type = doc["tipo"] | "off";
         _lastIndicator = millis();
         _signals.indicator(type);
 
-    } else if (strcmp(topic, topics.claxon) == 0) {
+    } else if (strcmp(topic, topics.horn) == 0) {
         if ((doc["estado"] | 1) != 0) _signals.horn();
     }
 }
