@@ -82,7 +82,7 @@ void SmartCar::loop() {
         }
     } else if (_modo == "obstaculos") {
         if (_velocidadConstante > 0.0) {
-            _obstacleAvoidance.actualizar(_velocidadConstante);
+            _obstacleAvoidance.update(_velocidadConstante);
         } else {
             _motor.drive(0, 0);
         }

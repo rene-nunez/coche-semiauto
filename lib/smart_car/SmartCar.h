@@ -9,7 +9,7 @@
 #include "Sonar.h"
 #include "Signals.h"
 #include "Line.h"
-#include "ObstacleAvoidance.h"
+#include "Obstacle.h"
 #include "GPSNavigation.h"
 
 #include <ArduinoJson.h>
@@ -29,7 +29,7 @@ class SmartCar {
         Sonar _ultrasonic;
         Signals _feedback;
         Line _lineFollower;
-        ObstacleAvoidance _obstacleAvoidance;
+        Obstacle _obstacleAvoidance;
         GPSNavigation _gpsNavigation;
 
         String _modo = "indefinido";
