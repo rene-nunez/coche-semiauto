@@ -1,59 +1,37 @@
 # Smart Car
 
-Prototipo de vehículo autónomo utilizando un ESP32, con control web en tiempo real y comunicación mediante MQTT. El proyecto permite controlar el vehículo de forma manual o utilizar distintos modos autónomos, como seguimiento de línea, evasión de obstáculos y navegación mediante GPS. Es compatible con brokers MQTT locales o públicos y no depende de aplicaciones móviles ni de servicios propietarios.
+Prototipo de vehículo **semiautónomo** con ESP32, controlado desde el navegador mediante MQTT. Puedes conducirlo con un joystick virtual o activar modos de asistencia (seguidor de línea, evasión de obstáculos y navegación GPS). Requiere supervisión humana en todo momento.
 
 ![hardware](./assets/hardware.jpeg)
 
-## Características
+## Cómo funciona
 
-- Control manual mediante joystick virtual.
-- Luces direccionales y claxon.
-- Seguimiento de línea mediante sensores infrarrojos.
-- Evasión automática de obstáculos con un sensor HC-SR04.
-- Navegación mediante coordenadas GPS.
-- Comunicación entre el Control Web y el ESP32 mediante MQTT.
-- Compatibilidad con brokers MQTT locales o públicos.
-- Control desde un navegador web.
-
-## Arquitectura
-
-El Control Web es una aplicación estática que se ejecuta en el navegador. El navegador se conecta directamente al broker MQTT mediante MQTT sobre WebSockets, mientras que el ESP32 lo hace mediante MQTT sobre TCP. El broker reenvía los comandos y estados entre ambos.
+El navegador se conecta al broker por MQTT sobre WebSockets y el ESP32 por MQTT sobre TCP. El broker reenvía comandos y estados entre ambos.
 
 ```text
-┌──────────────────────┐
-│   Navegador web      │
-│    (Control Web)     │
-└──────────┬───────────┘
-           │ MQTT sobre WebSockets (9001)
-           ▼
-┌──────────────────────┐
-│      Broker MQTT     │
-└──────────┬───────────┘
-           │ MQTT sobre TCP (1883)
-           ▼
-┌──────────────────────┐
-│  Smart Car (ESP32)   │
-└──────────────────────┘
+Navegador (Control Web) -- WebSocket :9001 --> Broker MQTT -- TCP :1883 --> Smart Car (ESP32)
 ```
 
-> El puerto `1883` corresponde normalmente a MQTT sin TLS y el `9001` a MQTT sobre WebSockets. Si utilizas otros puertos o una conexión segura, actualiza la configuración del broker, del firmware y del Control Web.
+> Si usas otros puertos o TLS, actualiza la configuración del broker, del firmware y del Control Web. Los puertos mostrados son los de `mosquitto/mosquitto.conf`.
 
-## Modos de operación
+## Modos
 
 | Modo | Descripción |
 |:---|:---|
-| **Manual** | Control del vehículo mediante un joystick virtual. Incluye dirección, luces direccionales y claxon. |
-| **Seguidor de línea** | Navegación autónoma siguiendo una línea mediante un arreglo de sensores infrarrojos. |
-| **Evasión de obstáculos** | Detección y evasión automática de obstáculos mediante un sensor HC-SR04. |
-| **Navegación GPS** | Navegación hacia unas coordenadas de destino utilizando un módulo GPS. |
+| **Manual** | Joystick virtual, direccionales, preventivas y claxon. |
+| **Seguidor** | Sigue una línea con el arreglo de sensores infrarrojos. |
+| **Obstáculos** | Detecta y esquiva objetos con el sensor HC-SR04. |
+| **Navegación** | Avanza hacia unas coordenadas GPS marcadas en el mapa. |
 
-## Hardware
+El coche se detiene si se pierde la conexión MQTT o si el joystick deja de enviar comandos. Aun así, no sustituye la vigilancia: los modos de asistencia son ayudas, no conducción totalmente autónoma.
+
+## Materiales
 
 | Categoría | Componente | Cantidad |
 |:---|:---|:---:|
 | **Control** | ESP32 | 1 |
 |  | Shield para ESP32 | 1 |
-|  | Expansor de entradas/salidas PCF8574 | 1 |
+|  | Expansor PCF8574 | 1 |
 |  | Buzzer pasivo | 1 |
 | **Chasis** | Chasis 2WD | 1 |
 |  | Motorreductor 1:48, 3,6–6 V | 2 |
@@ -61,15 +39,14 @@ El Control Web es una aplicación estática que se ejecuta en el navegador. El n
 |  | Rueda loca | 1 |
 |  | Discos de encoder | 2 |
 |  | Tornillería M3 | — |
-| **Motores** | Driver de motores DRV8833 | 1 |
-| **Sensores** | Módulo GPS Neo-6M, modelo GY-NEO6MV2 | 1 |
-|  | Sensor ultrasónico HC-SR04 | 1 |
-|  | Arreglo de sensores TCRT5000 | 1 |
-|  | Sensores de encoder FC-03 | 2 |
+| **Motores** | Driver DRV8833 | 1 |
+| **Sensores** | GPS Neo-6M (GY-NEO6MV2) | 1 |
+|  | Ultrasónico HC-SR04 | 1 |
+|  | Arreglo TCRT5000 | 1 |
+|  | Encoders FC-03 | 2 |
 | **Alimentación** | Baterías 18650 | 2 |
-|  | Portabaterías para 18650 | 1 |
-|  | Cargador para baterías 18650 | 1 |
-|  | Regulador de voltaje LM2596 | 1 |
+|  | Portabaterías y cargador para 18650 | 1 c/u |
+|  | Regulador LM2596 | 1 |
 |  | Capacitor electrolítico de 1000 µF | 1 |
 | **Indicadores** | LED rojo | 2 |
 |  | LED ámbar | 2 |
@@ -78,38 +55,19 @@ El Control Web es una aplicación estática que se ejecuta en el navegador. El n
 |  | Cables Dupont | — |
 
 > [!CAUTION]
-> Verifica la polaridad, el voltaje de operación y el consumo de cada componente antes de conectarlo. La fuente de alimentación debe ser capaz de entregar la corriente necesaria para el ESP32, los motores y los sensores.
+> Verifica polaridad, voltaje y consumo antes de conectar. Usa un portabaterías y cargador adecuados para las 18650 y no mezcles baterías con distinta carga o estado.
 
-> [!WARNING]
-> Utiliza las baterías 18650 con un portabaterías y un cargador adecuados. No mezcles baterías con distinto nivel de carga, capacidad o estado de conservación.
+## Puesta en marcha
 
-## Dependencias
+### 1. Broker MQTT
 
-Las dependencias se instalan automáticamente mediante PlatformIO durante la compilación.
+Necesitas un broker con WebSockets. Se recomienda **Eclipse Mosquitto**: en `mosquitto/mosquitto.conf` tienes una configuración lista para MQTT (1883) y WebSockets (9001). También sirve un broker público (EMQX, HiveMQ, test.mosquitto.org); cada uno usa sus propios puertos y rutas.
 
-| Librería | Versión |
-|:---|:---:|
-| [PubSubClient](https://registry.platformio.org/libraries/knolleary/PubSubClient) | `^2.8.0` |
-| [ArduinoJson](https://registry.platformio.org/libraries/bblanchon/ArduinoJson) | `^7.2.2` |
-| [TinyGPSPlus](https://registry.platformio.org/libraries/mikalhart/TinyGPSPlus) | `^1.1.0` |
-| [PCF8574](https://registry.platformio.org/libraries/robtillaart/PCF8574) | `^0.4.4` |
+ESP32, broker y navegador deben estar en la misma red, salvo que el broker sea accesible desde Internet. Evita redes con aislamiento de punto de acceso.
 
-## Requisitos
+### 2. Firmware
 
-Para compilar y cargar el firmware necesitas [PlatformIO CLI](https://platformio.org/install/cli).
-
-## Instalación
-
-### 1. Clonar el repositorio
-
-```bash
-git clone https://github.com/rene-nunez/smart-car.git
-cd smart-car
-```
-
-### 2. Configurar el firmware
-
-Abre [src/config.cpp](./src/config.cpp) y configura las credenciales de la red Wi-Fi y del broker MQTT:
+Necesitas [PlatformIO CLI](https://platformio.org/install/cli). Edita [src/config.cpp](./src/config.cpp) con tu red y broker:
 
 ```cpp
 const char* ssid = "YOUR_SSID";
@@ -118,16 +76,7 @@ const char* mqtt_server = "BROKER_HOST";
 const int port = 1883;
 ```
 
-Reemplaza los valores de ejemplo por los correspondientes a tu instalación:
-
-- `YOUR_SSID`: nombre de la red Wi-Fi.
-- `YOUR_PASSWORD`: contraseña de la red Wi-Fi.
-- `BROKER_HOST`: dirección IP o nombre de host del broker MQTT.
-- `port`: puerto del broker MQTT, normalmente `1883`.
-
-El ESP32 y el broker MQTT deben estar conectados a la misma red, salvo que el broker sea accesible desde Internet.
-
-### 3. Compilar y cargar el firmware
+Luego compila y carga:
 
 ```bash
 pio run
@@ -135,63 +84,52 @@ pio run --target upload
 pio device monitor
 ```
 
-### 4. Instalar el control web
+Las librerías se instalan solas: PubSubClient `^2.8.0`, TinyGPSPlus `^1.1.0`, PCF8574 `^0.4.4` y ArduinoJson `^7.2.2`.
 
-Consulta las instrucciones de instalación y configuración en el [README del control web](./web/README.md).
+### 3. Control Web
 
-## Instrucciones de uso
+```bash
+cd web
+npm ci
+cp .env.example .env   # configura host, puerto y ruta WebSocket del broker
+npm run dev
+```
 
-1. Enciende el ESP32 y el resto del hardware.
-2. Inicia el broker MQTT.
-3. Inicia el Control Web.
-4. Abre el Control Web desde un navegador.
-5. Comprueba que el indicador MQTT muestre el estado **Conectado**.
-6. Selecciona el modo de operación.
-7. Utiliza el joystick o los controles disponibles.
+Abre `http://localhost:3000`. Para generar los archivos de producción usa `npm run build` (salida en `web/dist`). Consulta [web/README.md](./web/README.md) para más detalles.
 
-## Comunicación MQTT
+### 4. Uso
 
-### Flujo de comunicación
+1. Enciende el ESP32 y el broker, y abre el Control Web.
+2. Espera a que el indicador MQTT muestre **Conectado**.
+3. Selecciona un modo y usa los controles disponibles.
 
-- El control web publica comandos en los tópicos de control.
-- El ESP32 se suscribe a los tópicos de control y ejecuta las acciones recibidas.
-- El ESP32 publica información de estado.
-- El Control web se suscribe a los tópicos de estado.
+## MQTT
 
-### Tópicos de control
+El Control Web publica comandos y escucha estados; el ESP32 hace lo contrario.
 
-| Publicador | Suscriptor | Tópico | Payload de ejemplo |
+| Publicador | Suscriptor | Tópico | Ejemplo |
 |:---|:---|:---|:---|
-| Control web | ESP32 | `smartcar/accion/modo` | `{"modo":"manual"}` |
-| Control web | ESP32 | `smartcar/modo/manual` | `{"x":0.5,"y":0.3}` |
-| Control web | ESP32 | `smartcar/accion/luces` | `{"tipo":"izq"}` |
-| Control web | ESP32 | `smartcar/accion/claxon` | `{"estado":1}` |
-| Control web | ESP32 | `smartcar/modo/seguidor` | `{"accion":"activar"}` |
-| Control web | ESP32 | `smartcar/modo/obstaculos` | `{"accion":"activar"}` |
-| Control web | ESP32 | `smartcar/modo/navegacion` | `{"accion":"iniciar","lat":19.24,"lon":-103.69}` |
+| Web | ESP32 | `smartcar/accion/modo` | `{"modo":"manual"}` |
+| Web | ESP32 | `smartcar/modo/manual` | `{"x":0.5,"y":0.3}` |
+| Web | ESP32 | `smartcar/accion/luces` | `{"tipo":"izq"}` |
+| Web | ESP32 | `smartcar/accion/claxon` | `{"estado":1}` |
+| Web | ESP32 | `smartcar/modo/seguidor` | `{"accion":"activar"}` |
+| Web | ESP32 | `smartcar/modo/obstaculos` | `{"accion":"activar"}` |
+| Web | ESP32 | `smartcar/modo/navegacion` | `{"accion":"iniciar","lat":19.24,"lon":-103.69}` |
+| ESP32 | Web | `smartcar/estado/ubicacion` | `{"lat":19.24,"lon":-103.69,"error":40,"sat":4,"destino":false}` |
 
-### Tópicos de estado
-
-| Publicador | Suscriptor | Tópico | Payload de ejemplo |
-|:---|:---|:---|:---|
-| ESP32 | Control web | `smartcar/estado/ubicacion` | `{"lat":19.24,"lon":-103.69,"error":40,"sat":4,"destino":true}` |
-
-### Valores permitidos
-
-| Campo | Valores o rango | Descripción |
-|:---|:---|:---|
-| `modo` | `manual`, `seguidor`, `obstaculos`, `navegacion` | Modo de operación seleccionado. |
-| `tipo` | `izq`, `der`, `prev`, `off` | Luz direccional, luces preventivas o apagado. |
-| `accion` | `activar`, `desactivar`, `iniciar`, `detener`, `reanudar` | Acción que debe ejecutar el ESP32. |
-| `estado` | `0`, `1` | Desactivado o activado. |
-| `x` | `-1.0` a `1.0` | Posición horizontal del joystick. |
-| `y` | `-1.0` a `1.0` | Posición vertical del joystick. |
-| `lat` | Coordenada decimal | Latitud actual o de destino. |
-| `lon` | Coordenada decimal | Longitud actual o de destino. |
-| `error` | Grados | Error de rumbo respecto al destino. |
-| `sat` | Número entero | Número de satélites utilizados por el GPS. |
-| `destino` | `true` o `false` | Indica si se alcanzó el destino; el Control Web reinicia la navegación al recibir `true`. |
+| Campo | Valores o rango |
+|:---|:---|
+| `modo` | `manual`, `seguidor`, `obstaculos`, `navegacion` |
+| `tipo` | `izq`, `der`, `prev`, `off` |
+| `accion` | `activar`, `desactivar`, `iniciar`, `detener`, `reanudar` |
+| `estado` | `0` (no sonar), `1` (sonar) |
+| `x`, `y` | `-1.0` a `1.0` (joystick) |
+| `lat`, `lon` | Coordenadas decimales |
+| `error` | Error de rumbo en grados |
+| `sat` | Número de satélites |
+| `destino` | `true` al alcanzar el destino; la web reinicia la navegación |
 
 ## Licencia
 
-Este proyecto se distribuye bajo la licencia MIT. Consulta el fichero [LICENSE](./LICENSE) para obtener más información.
+MIT. Consulta [LICENSE](./LICENSE).

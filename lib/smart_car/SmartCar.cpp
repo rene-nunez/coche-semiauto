@@ -50,7 +50,7 @@ void SmartCar::loop() {
     _mqtt.procesar();
 
     // Sin conexión MQTT no hay forma de detener el vehículo de forma remota:
-    // se detiene y se desactivan los modos autónomos hasta que el usuario los reactive.
+    // se detiene y se desactivan los modos de asistencia hasta que el usuario los reactive.
     if (!_mqtt.estaConectado()) {
         _motor.conducir(0, 0);
         _velocidadConstante = 0.0f;

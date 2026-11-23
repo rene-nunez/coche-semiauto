@@ -1,140 +1,31 @@
 # Control Web
 
-Interfaz web para controlar un Smart Car en tiempo real mediante MQTT sobre WebSockets desde el navegador.
+Interfaz web para el Smart Car: joystick y modos de asistencia, conectados al broker por MQTT sobre WebSockets. Los modos, tópicos y montaje del hardware están en el [README principal](../README.md).
 
-> [!NOTE]
-> Los modos de operación y el diagrama de comunicación están documentados en el [README principal](../README.md). En este documento solo se indica dónde se definen los tópicos y quién gestiona la comunicación MQTT del Control Web.
+## Requisitos
 
-## Tecnologías utilizadas
-
-* [Vite](https://vite.dev) — bundler y servidor de desarrollo.
-* [Tailwind CSS v4](https://tailwindcss.com) — estilos utility-first.
-* [DaisyUI v5](https://daisyui.com) — componentes UI y temas.
-* [Heroicons](https://heroicons.com) — iconos SVG.
-* [Leaflet](https://leafletjs.com/) — mapas interactivos.
-* [MQTT.js](https://github.com/mqttjs) — comunicación con el broker vía WebSockets.
+- Node.js `20.19+` o `22.12+` y npm (requisito de Vite 8).
+- Broker MQTT con WebSockets. Se recomienda Mosquitto con la configuración incluida en el repositorio; también funcionan brokers públicos.
 
 ## Instalación
 
-### Requisitos
-
-* [Node.js y npm](https://nodejs.org) (Node.js `20.19+` o `22.12+`, requisito de Vite 8).
-* Broker MQTT con soporte para WebSockets.
-
-### 1. Clonar e instalar dependencias
-
 ```bash
-git clone https://github.com/rene-nunez/smart-car
-cd smart-car/web
 npm ci
-```
-
-> `npm ci` instala exactamente las versiones de `package-lock.json`. También puedes usar `npm install` si necesitas actualizar dependencias.
-
-### 2. Configurar variables de entorno
-
-```bash
 cp .env.example .env
 ```
 
-Edita el archivo `.env` con la configuración de tu broker MQTT.
+Edita `.env` con el protocolo (`ws`/`wss`), host, puerto y ruta WebSocket del broker. Los ejemplos para brokers locales y públicos están en [.env.example](./.env.example). No se admite autenticación usuario/contraseña.
 
-### 3. Configuración del broker
-
-Asegúrate de que tu broker MQTT soporte WebSockets.
-
-#### Local
-
-> [!NOTE]
-> En este repositorio se incluye una guía para instalar Eclipse Mosquitto. Consulta [mosquitto/README.md](../mosquitto/README.md).
-
-#### Público
-
-Puedes usar brokers como:
-
-* [broker.hivemq.com](https://broker.hivemq.com)
-* [broker.emqx.io](https://broker.emqx.io)
-* [test.mosquitto.org](https://test.mosquitto.org)
-
-Cada uno utiliza puertos y paths distintos para WebSockets; consulta su documentación.
-
-## Instrucciones de uso
-
-### Desarrollo
+## Uso
 
 ```bash
-npm run dev
+npm run dev       # servidor de desarrollo en http://localhost:3000
+npm run build     # genera los archivos en dist/
+npm run preview   # previsualiza la compilación
 ```
 
-La aplicación estará disponible en:
-
-* **Local:** [http://localhost:3000](http://localhost:3000)
-* **Red local:** utiliza la IP que se muestra en la terminal.
-
-### Producción
-
-1. **Compilar:**
-
-   ```bash
-   npm run build
-   ```
-
-2. **Desplegar:** sube el contenido de la carpeta resultante `/dist` a tu servidor o despliega en tu proveedor de hosting.
-
-3. **Previsualizar localmente:**
-
-   ```bash
-   npm run preview
-   ```
-
-## Comunicación MQTT
-
-La comunicación con el broker se realiza mediante WebSockets y se centraliza en `mqtt/mqttService.js`, utilizando los tópicos definidos en `mqtt/topics.js`.
-
-Este módulo se encarga de:
-
-- Publicar comandos según el modo activo o elemento de la interfaz.
-- Suscribirse a los tópicos de estado del Smart Car.
-- Gestionar el estado de conexión mediante `mqttStatus.js`.
-
-## Características
-
-* Interfaz responsive (desktop y móvil).
-* Sistema modular basado en modos en JavaScript Vanilla.
-* Comunicación en tiempo real mediante MQTT.
-* Gestión de estado de conexión.
-* Integración de mapas interactivos con Leaflet.
-* Persistencia de tema (claro/oscuro) con localStorage.
+El servidor de desarrollo escucha en todas las interfaces (`0.0.0.0:3000`) para poder abrirlo desde el móvil en la misma red.
 
 ## Mapas
 
-Este proyecto utiliza **Stadia Maps** y **Esri World Imagery** como proveedores de tiles para la visualización del mapa en el modo navegación GPS.
-
-El mapa incluye capas seleccionables: **Tema** (se adapta automáticamente al tema activo — `alidade_smooth` en claro, `alidade_smooth_dark` en oscuro), **Outdoors** y **Satélite** (Esri World Imagery).
-
-> [!NOTE]
-> En entorno de desarrollo, ambos proveedores permiten el uso de sus tiles sin restricciones de dominio, por lo que el mapa funciona correctamente sin configuración adicional.
-
-> [!IMPORTANT]
-> En este proyecto, el uso de mapas **está configurado con restricción por dominio**.
->
-> Esto implica que:
->
-> - En producción, el mapa solo funcionará si el dominio está autorizado correctamente en el proveedor.
-> - Si el dominio no está registrado o la API key no es válida, el mapa no cargará.
-
-### Configuración recomendada para producción
-
-Para evitar problemas en despliegue registrar tu dominio en el proveedor de mapas (por ejemplo, Stadia Maps). Verificar que las restricciones de dominio (referer) coincidan con la URL final del proyecto.
-
-Consulta la documentación oficial:
-[https://docs.stadiamaps.com/authentication/](https://docs.stadiamaps.com/authentication/)
-
-> [!TIP]
-> La capa gratuita de Stadia Maps suele ser suficiente para este proyecto.
-
-### Alternativas
-
-Si no deseas configurar autenticación o restricciones por dominio, puedes usar **OpenStreetMap (OSM)** como proveedor de tiles. Solo asegúrate de respetar sus políticas de uso.
-
-[https://operations.osmfoundation.org/policies/tiles/](https://operations.osmfoundation.org/policies/tiles/)
+El modo navegación usa tiles de Stadia Maps y Esri World Imagery con Leaflet. En desarrollo funcionan sin configuración; en producción hay que registrar el dominio autorizado en el proveedor ([documentación de Stadia](https://docs.stadiamaps.com/authentication/)). Como alternativa sin restricciones de dominio puedes usar [OpenStreetMap](https://operations.osmfoundation.org/policies/tiles/), respetando sus políticas de uso.
