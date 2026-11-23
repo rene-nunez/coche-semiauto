@@ -56,6 +56,18 @@ window.addEventListener("pagehide", () => {
     }
 });
 
+// El navegador puede conservar la página en caché al salir y volver. En ese
+// caso no se recarga el script, así que hay que reenviar el estado activo.
+window.addEventListener("pageshow", (event) => {
+    if (!event.persisted) return;
+
+    if (currentMode === seguidor || currentMode === obstaculos) {
+        currentMode.controlar();
+    } else if (currentMode === navegacion && navegacion.estado === "NAVEGANDO" && navegacion.destino) {
+        navegacion.enviarAccion("iniciar");
+    }
+});
+
 mqttService.recibir((topic, payload) => {
     if (!payload) return;
 
