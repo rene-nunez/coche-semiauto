@@ -15,9 +15,7 @@ function leerTema() {
 function guardarTema(tema) {
     try {
         localStorage.setItem(THEME_KEY, tema);
-    } catch {
-        // Sin persistencia
-    }
+    } catch {}
 }
 
 export function initTheme() {

@@ -1,23 +1,21 @@
-// Función para actualizar el indicador visual y texto del estado de la conexión MQTT
-export function actualizar(message, status) {
-    const contenedor = document.getElementById("mqtt-status");
+const CLASES_ESTADO = {
+    connecting: "bg-info",
+    connected: "bg-success",
+    reconnecting: "bg-primary",
+    disconnected: "bg-neutral",
+    error: "bg-error"
+};
+
+export function actualizarEstado(message, status) {
     const indicador = document.getElementById("status-dot");
     const texto = document.getElementById("status-text");
 
-    if (!contenedor || !indicador || !texto) return;
-
-    const indicadorClases = {
-        connecting: "bg-info",
-        connected: "bg-success",
-        reconnecting: "bg-primary",
-        disconnected: "bg-neutral",
-        error: "bg-error"
-    };
+    if (!indicador || !texto) return;
 
     texto.textContent = message;
 
-    indicador.classList.remove("bg-info", "bg-success", "bg-primary", "bg-neutral", "bg-error");
-    indicador.classList.add(indicadorClases[status] || "bg-neutral");
+    indicador.classList.remove(...Object.values(CLASES_ESTADO));
+    indicador.classList.add(CLASES_ESTADO[status] || "bg-neutral");
 
     if (status === "connecting" || status === "reconnecting") {
         indicador.classList.add("animate-pulse");

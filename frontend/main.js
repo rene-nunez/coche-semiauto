@@ -1,49 +1,35 @@
-import './css/style.css';
-import {initTheme} from "./modules/theme/theme.js"; // Cargar tema guardado en localStorage
-import mqttService from "./modules/mqtt/mqttService.js"; // Objeto para el servicio MQTT
-import {topics} from "./modules/mqtt/topics.js"; // Diccionario de tópicos MQTT
+import "./css/style.css";
+import {initTheme} from "./modules/theme/theme.js";
+import mqttService from "./modules/mqtt/mqttService.js";
+import {topics} from "./modules/mqtt/topics.js";
 
-// Modos
 import manual from "./modules/modes/manual.js";
 import seguidor from "./modules/modes/seguidor.js";
 import obstaculos from "./modules/modes/obstaculos.js";
 import navegacion from "./modules/modes/navegacion.js";
 
-initTheme(); // Tema guardado en localStorage
+initTheme();
 mqttService.conectar();
 
-// Elementos de la interfaz
 const modeSelectBtn = document.getElementById("mode-select-btn");
 const modeSelectMenu = document.getElementById("mode-select-menu");
 const modeInterface = document.getElementById("mode-interface");
 
-// Modo seleccionado
 let currentMode = null;
 
-/*
-    Cambio de modo:
-    - elimina modo anterior si existe
-    - limpia interfaz y eventos si existen
-    - monta nuevo modo
-    - publica cambio por MQTT
-*/
 function setMode(mode, name) {
-    if (currentMode?.eliminar) {
-        currentMode.eliminar();
-    }
+    currentMode?.eliminar?.();
 
     modeInterface.innerHTML = "";
     currentMode = mode;
 
-    if (currentMode?.montar) {
-        currentMode.montar(modeInterface);
-    }
+    currentMode?.montar?.(modeInterface);
 
     mqttService.publicar(topics.accion.modo, {modo: name});
 }
 
-// Al recargar o cerrar la pestaña no se ejecutan los eliminar() de los modos:
-// publicar la parada evita que el coche siga avanzando sin supervisión.
+// Al recargar o cerrar no se ejecutan los eliminar(): publicar la parada evita
+// que el coche siga avanzando sin supervisión.
 window.addEventListener("pagehide", () => {
     if (currentMode === manual) {
         mqttService.publicar(topics.modo.manual, {x: 0, y: 0});
@@ -56,8 +42,8 @@ window.addEventListener("pagehide", () => {
     }
 });
 
-// El navegador puede conservar la página en caché al salir y volver. En ese
-// caso no se recarga el script, así que hay que reenviar el estado activo.
+// El navegador puede conservar la página en caché al volver: no se recarga el
+// script, así que hay que reenviar el estado activo.
 window.addEventListener("pageshow", (event) => {
     if (!event.persisted) return;
 
@@ -73,7 +59,7 @@ mqttService.recibir((topic, payload) => {
 
     if (topic === topics.estado.ubicacion && currentMode === navegacion) {
         const {lat, lon, error, sat, destino} = payload;
-        
+
         if (typeof lat === "number" && typeof lon === "number") {
             navegacion.actualizarInterfaz(lat, lon, error, sat);
         }
@@ -84,7 +70,6 @@ mqttService.recibir((topic, payload) => {
     }
 });
 
-// Selector de modos
 modeSelectMenu.addEventListener("click", (event) => {
     const item = event.target.closest("[data-value]");
     if (!item) return;
