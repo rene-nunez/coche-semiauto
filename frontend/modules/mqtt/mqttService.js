@@ -1,6 +1,6 @@
 import mqtt from "mqtt";
 import {topics} from "./topics.js";
-import {actualizarEstado} from "./mqttStatus.js";
+import {updateStatus} from "./mqttStatus.js";
 
 const MQTT_PROTOCOL = import.meta.env.VITE_MQTT_PROTOCOL;
 const MQTT_HOST = import.meta.env.VITE_MQTT_HOST;
@@ -10,127 +10,123 @@ const MQTT_PATH = import.meta.env.VITE_MQTT_PATH || "";
 if (!MQTT_HOST || !MQTT_PORT) throw new Error("Faltan MQTT_HOST o MQTT_PORT");
 
 const BROKER_URL = (() => {
-    const protocolo = MQTT_PROTOCOL || (window.location.protocol === "https:" ? "wss" : "ws");
+    const protocol = MQTT_PROTOCOL || (window.location.protocol === "https:" ? "wss" : "ws");
     const path = MQTT_PATH.trim();
     const suffix = path && !path.startsWith("/") ? `/${path}` : path;
-    return `${protocolo}://${MQTT_HOST}:${MQTT_PORT}${suffix}`;
+    return `${protocol}://${MQTT_HOST}:${MQTT_PORT}${suffix}`;
 })();
 
 const isDev = import.meta.env.DEV;
 
 // Reenviar estos comandos tras una reconexión evita que el ESP32 quede en un
 // modo distinto al que muestra la interfaz.
-const TOPICOS_REPETIBLES = new Set([
-    topics.accion.modo,
-    topics.modo.seguidor,
-    topics.modo.obstaculos,
-    topics.modo.navegacion
+const REPEATABLE_TOPICS = new Set([
+    topics.action.mode,
+    topics.mode.line,
+    topics.mode.obstacle,
+    topics.mode.navigation
 ]);
 
-const pendientes = new Map();
+const pending = new Map();
 
 const mqttService = {
-    cliente: null,
-    callback: null,
+    client: null,
+    handler: null,
 
-    conectar() {
-        if (this.cliente) return;
+    connect() {
+        if (this.client) return;
 
-        this.cliente = mqtt.connect(BROKER_URL, {
+        this.client = mqtt.connect(BROKER_URL, {
             clientId: "control-" + (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)),
             clean: true,
             reconnectPeriod: 2000,
             connectTimeout: 5000
         });
 
-        this.configurarEventos();
+        this.setupEvents();
     },
 
-    configurarEventos() {
-        this.cliente.on("connect", () => {
-            actualizarEstado("Conectado", "connected");
+    setupEvents() {
+        this.client.on("connect", () => {
+            updateStatus("Conectado", "connected");
             if (isDev) {
-                console.info("[MQTT] conectado", {
+                console.info("[MQTT] connected", {
                     url: BROKER_URL,
-                    clientId: this.cliente.options.clientId
+                    clientId: this.client.options.clientId
                 });
             }
 
-            this.cliente.subscribe(topics.estado.ubicacion, (err) => {
-                if (err) console.error(`[MQTT] error al suscribirse (${topics.estado.ubicacion})`, err);
+            this.client.subscribe(topics.status.location, (err) => {
+                if (err) console.error(`[MQTT] subscribe failed (${topics.status.location})`, err);
             });
 
-            for (const [topico, mensaje] of pendientes) {
-                this.publicar(topico, mensaje);
+            for (const [topic, message] of pending) {
+                this.publish(topic, message);
             }
         });
 
-        this.cliente.on("reconnect", () => {
-            actualizarEstado("Reconectando", "reconnecting");
-            if (isDev) console.warn("[MQTT] reconectando...");
+        this.client.on("reconnect", () => {
+            updateStatus("Reconectando", "reconnecting");
+            if (isDev) console.warn("[MQTT] reconnecting...");
         });
 
-        this.cliente.on("offline", () => {
-            actualizarEstado("Desconectado", "disconnected");
-            if (isDev) console.warn("[MQTT] desconectado");
+        this.client.on("offline", () => {
+            updateStatus("Desconectado", "disconnected");
+            if (isDev) console.warn("[MQTT] disconnected");
         });
 
-        this.cliente.on("error", (err) => {
-            actualizarEstado("Error", "error");
+        this.client.on("error", (err) => {
+            updateStatus("Error", "error");
             console.error(`[MQTT] error: ${err.message}`);
-
             if (isDev && err.stack) console.error(err.stack);
         });
 
-        this.cliente.on("message", (topic, message) => {
+        this.client.on("message", (topic, message) => {
             let payload;
 
             try {
                 payload = JSON.parse(message.toString());
             } catch (err) {
-                console.error(`[MQTT] mensaje inválido (${topic})`, err.message);
+                console.error(`[MQTT] invalid message (${topic})`, err.message);
                 if (isDev) console.error("Payload:", message.toString());
                 return;
             }
 
-            if (isDev) console.info(`[MQTT] mensaje (${topic})`, payload);
+            if (isDev) console.info(`[MQTT] message (${topic})`, payload);
 
             try {
-                this.callback?.(topic, payload);
+                this.handler?.(topic, payload);
             } catch (err) {
-                console.error(`[MQTT] error en el manejador (${topic})`, err);
+                console.error(`[MQTT] handler failed (${topic})`, err);
             }
         });
     },
 
-    recibir(handler) {
-        this.callback = handler;
+    onMessage(handler) {
+        this.handler = handler;
     },
 
-    publicar(topic, mensaje) {
-        if (!mensaje || typeof mensaje !== "object" || Array.isArray(mensaje)) {
-            console.error(`[MQTT] payload inválido (${topic})`);
+    publish(topic, message) {
+        if (!message || typeof message !== "object" || Array.isArray(message)) {
+            console.error(`[MQTT] invalid payload (${topic})`);
             return;
         }
 
-        if (TOPICOS_REPETIBLES.has(topic)) {
-            pendientes.set(topic, mensaje);
+        if (REPEATABLE_TOPICS.has(topic)) {
+            pending.set(topic, message);
         }
 
-        if (!this.cliente?.connected) {
-            console.warn(`[MQTT] publicación sin conexión (${topic})`);
+        if (!this.client?.connected) {
+            console.warn(`[MQTT] publish without connection (${topic})`);
             return;
         }
 
-        const payload = JSON.stringify(mensaje);
+        const payload = JSON.stringify(message);
 
-        if (isDev) console.info(`[MQTT] publicando en ${topic}`, mensaje);
+        if (isDev) console.info(`[MQTT] publishing to ${topic}`, message);
 
-        this.cliente.publish(topic, payload, {qos: 0}, (err) => {
-            if (err) {
-                console.error(`[MQTT] error publish (${topic})`);
-                if (isDev) console.error(payload);
-            }
+        this.client.publish(topic, payload, {qos: 0}, (err) => {
+            if (err) console.error(`[MQTT] publish failed (${topic})`, err);
         });
     }
 };

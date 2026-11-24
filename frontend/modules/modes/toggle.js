@@ -1,50 +1,51 @@
 import mqttService from "../mqtt/mqttService.js";
+import {ACTION, FIELD} from "../mqtt/protocol.js";
 
 export function createToggleMode(topic) {
     return {
-        contenedor: null,
+        container: null,
         toggle: null,
-        activo: false,
-        toggleClick: null,
+        active: false,
+        changeHandler: null,
 
-        montar(contenedor) {
-            this.contenedor = contenedor;
+        mount(container) {
+            this.container = container;
 
-            contenedor.innerHTML = `
+            container.innerHTML = `
                 <div class="mode-wrapper mode-center">
                     <input type="checkbox" class="toggle toggle-success toggle-xl"/>
                 </div>
             `;
 
-            this.enlazar();
+            this.bind();
         },
 
-        enlazar() {
-            this.toggle = this.contenedor.querySelector(".toggle");
-            this.toggleClick = () => this.controlar();
-            this.toggle?.addEventListener("change", this.toggleClick);
+        bind() {
+            this.toggle = this.container.querySelector(".toggle");
+            this.changeHandler = () => this.handleChange();
+            this.toggle?.addEventListener("change", this.changeHandler);
         },
 
-        controlar() {
-            this.activo = this.toggle.checked;
+        handleChange() {
+            this.active = this.toggle.checked;
 
-            mqttService.publicar(topic, {
-                accion: this.activo ? "activar" : "desactivar"
+            mqttService.publish(topic, {
+                [FIELD.ACTION]: this.active ? ACTION.ACTIVATE : ACTION.DEACTIVATE
             });
         },
 
-        eliminar() {
-            this.toggle?.removeEventListener("change", this.toggleClick);
+        remove() {
+            this.toggle?.removeEventListener("change", this.changeHandler);
 
-            if (this.activo) {
+            if (this.active) {
                 // Publicar la parada aunque se esté saliendo del modo.
-                mqttService.publicar(topic, {accion: "desactivar"});
+                mqttService.publish(topic, {[FIELD.ACTION]: ACTION.DEACTIVATE});
             }
 
-            this.contenedor = null;
+            this.container = null;
             this.toggle = null;
-            this.toggleClick = null;
-            this.activo = false;
+            this.changeHandler = null;
+            this.active = false;
         }
     };
 }

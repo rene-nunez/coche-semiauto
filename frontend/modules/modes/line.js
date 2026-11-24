@@ -1,4 +1,4 @@
 import {topics} from "../mqtt/topics.js";
 import {createToggleMode} from "./toggle.js";
 
-export default createToggleMode(topics.modo.obstaculos);
+export default createToggleMode(topics.mode.line);

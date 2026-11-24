@@ -34,7 +34,7 @@
     @apply flex items-center justify-center;
 }
 
-#mapa {
+#map {
     @apply absolute inset-0;
 }
 

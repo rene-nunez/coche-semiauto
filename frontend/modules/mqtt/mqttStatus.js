@@ -1,4 +1,4 @@
-const CLASES_ESTADO = {
+const STATUS_CLASSES = {
     connecting: "bg-info",
     connected: "bg-success",
     reconnecting: "bg-primary",
@@ -6,20 +6,15 @@ const CLASES_ESTADO = {
     error: "bg-error"
 };
 
-export function actualizarEstado(message, status) {
-    const indicador = document.getElementById("status-dot");
-    const texto = document.getElementById("status-text");
+export function updateStatus(message, status) {
+    const indicator = document.getElementById("status-dot");
+    const text = document.getElementById("status-text");
 
-    if (!indicador || !texto) return;
+    if (!indicator || !text) return;
 
-    texto.textContent = message;
+    text.textContent = message;
 
-    indicador.classList.remove(...Object.values(CLASES_ESTADO));
-    indicador.classList.add(CLASES_ESTADO[status] || "bg-neutral");
-
-    if (status === "connecting" || status === "reconnecting") {
-        indicador.classList.add("animate-pulse");
-    } else {
-        indicador.classList.remove("animate-pulse");
-    }
+    indicator.classList.remove(...Object.values(STATUS_CLASSES));
+    indicator.classList.add(STATUS_CLASSES[status] || "bg-neutral");
+    indicator.classList.toggle("animate-pulse", status === "connecting" || status === "reconnecting");
 }

@@ -3,7 +3,7 @@ const THEME_LIGHT = "cmyk";
 const THEME_DARK = "dark";
 
 // En navegación privada o con almacenamiento bloqueado, localStorage lanza SecurityError; el tema simplemente no se persiste.
-function leerTema() {
+function readTheme() {
     try {
         return localStorage.getItem(THEME_KEY);
     } catch {
@@ -11,14 +11,14 @@ function leerTema() {
     }
 }
 
-function guardarTema(tema) {
+function saveTheme(theme) {
     try {
-        localStorage.setItem(THEME_KEY, tema);
+        localStorage.setItem(THEME_KEY, theme);
     } catch {}
 }
 
 export function initTheme() {
-    const savedTheme = leerTema();
+    const savedTheme = readTheme();
     const html = document.documentElement;
     const controller = document.querySelector(".theme-controller");
 
@@ -29,18 +29,14 @@ export function initTheme() {
             : THEME_DARK;
 
         html.setAttribute("data-theme", theme);
-        guardarTema(theme);
+        saveTheme(theme);
 
-        if (controller) {
-            controller.checked = theme === THEME_LIGHT;
-        }
+        if (controller) controller.checked = theme === THEME_LIGHT;
     }
 
-    if (controller) {
-        controller.addEventListener("change", (event) => {
-            const theme = event.target.checked ? THEME_LIGHT : THEME_DARK;
-            html.setAttribute("data-theme", theme);
-            guardarTema(theme);
-        });
-    }
+    controller?.addEventListener("change", (event) => {
+        const theme = event.target.checked ? THEME_LIGHT : THEME_DARK;
+        html.setAttribute("data-theme", theme);
+        saveTheme(theme);
+    });
 }

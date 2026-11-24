@@ -1,145 +1,156 @@
 import mqttService from "../mqtt/mqttService.js";
 import {topics} from "../mqtt/topics.js";
+import {FIELD, LIGHT} from "../mqtt/protocol.js";
 
-const LUCES_OFF = Object.freeze({izq: false, prev: false, der: false});
+const LIGHTS_OFF = Object.freeze({
+    [LIGHT.LEFT]: false,
+    [LIGHT.BRAKE]: false,
+    [LIGHT.RIGHT]: false
+});
+
+const LIGHT_BUTTONS = [
+    [LIGHT.LEFT, "leftButton"],
+    [LIGHT.BRAKE, "brakeButton"],
+    [LIGHT.RIGHT, "rightButton"]
+];
 
 const manual = {
-    contenedor: null,
+    container: null,
     joystick: null,
     puck: null,
-    valX: null,
-    valY: null,
-    btnClaxon: null,
-    btnDirIzq: null,
-    btnPrev: null,
-    btnDirDer: null,
+    xValue: null,
+    yValue: null,
+    hornButton: null,
+    leftButton: null,
+    brakeButton: null,
+    rightButton: null,
 
     dragging: false,
-    latestMsg: {x: 0, y: 0},
+    latestMessage: {[FIELD.X]: 0, [FIELD.Y]: 0},
     sendInterval: null,
-    lucesInterval: null,
-    estadoLuces: {...LUCES_OFF},
+    lightInterval: null,
+    lightState: {...LIGHTS_OFF},
     abortController: null,
 
-    FRECUENCIA_MS: 50,
-    DEADZONE: 0.10,
-    CURVA_POTENCIA: 1.8,
-    FILTRO_ALPHA: 0.3, // 0 = muy filtrado, 1 = sin filtro
-    ultimoX: 0,
-    ultimoY: 0,
+    SEND_INTERVAL_MS: 50,
+    DEAD_ZONE: 0.10,
+    CURVE_POWER: 1.8,
+    FILTER_ALPHA: 0.3, // 0 = muy filtrado, 1 = sin filtro
+    lastX: 0,
+    lastY: 0,
 
-    montar(contenedor) {
-        if (this.abortController) {
-            this.abortController.abort();
-        }
+    get activeLight() {
+        return Object.keys(this.lightState).find(type => this.lightState[type]) || null;
+    },
 
-        this.contenedor = contenedor;
+    mount(container) {
+        if (this.abortController) this.abortController.abort();
 
-        contenedor.innerHTML = `
+        this.container = container;
+
+        container.innerHTML = `
             <div class="mode-wrapper mode-center gap-8">
                 <div id="joystick-container" class="relative w-52 h-52 rounded-full border-4 border-base-300 shadow-inner shrink-0 bg-base-200/50">
                     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-base-content/10 rounded-full pointer-events-none"></div>
                     <div id="joystick-puck" class="absolute w-16 h-16 rounded-full shadow-2xl top-1/2 left-1/2 cursor-grab" style="background: var(--color-success); transform: translate(-50%, -50%); touch-action: none; z-index: 10;"></div>
                 </div>
                 <div class="flex justify-center gap-8 text-xs font-mono opacity-70">
-                    <p>X: <span id="valX" class="font-black text-success text-sm">0.00</span></p>
-                    <p>Y: <span id="valY" class="font-black text-success text-sm">0.00</span></p>
+                    <p>X: <span id="joystick-x" class="font-black text-success text-sm">0.00</span></p>
+                    <p>Y: <span id="joystick-y" class="font-black text-success text-sm">0.00</span></p>
                 </div>
                 <div class="flex flex-col items-center gap-3 w-full max-w-xs">
                     <div class="flex gap-3">
-                        <button id="btnDirIzq" class="btn btn-outline btn-circle btn-lg">
+                        <button id="light-left" class="btn btn-outline btn-circle btn-lg">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-7 w-7"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
                         </button>
-                        <button id="btnPrev" class="btn btn-outline btn-circle btn-lg">
+                        <button id="light-brake" class="btn btn-outline btn-circle btn-lg">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-7 w-7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
                         </button>
-                        <button id="btnDirDer" class="btn btn-outline btn-circle btn-lg">
+                        <button id="light-right" class="btn btn-outline btn-circle btn-lg">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-7 w-7"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
                         </button>
                     </div>
-                    <button id="btnClaxon" class="btn btn-success w-2/3 mt-2 active:scale-98 transition-transform duration-100">Claxon</button>
+                    <button id="horn-button" class="btn btn-success w-2/3 mt-2 active:scale-98 transition-transform duration-100">Claxon</button>
                 </div>
             </div>
         `;
 
-        this.enlazar();
+        this.bind();
     },
 
-    enlazar() {
+    bind() {
         this.abortController = new AbortController();
         const {signal} = this.abortController;
 
-        this.joystick = this.contenedor.querySelector("#joystick-container");
-        this.puck = this.contenedor.querySelector("#joystick-puck");
-        this.valX = this.contenedor.querySelector("#valX");
-        this.valY = this.contenedor.querySelector("#valY");
-        this.btnClaxon = this.contenedor.querySelector("#btnClaxon");
-        this.btnDirIzq = this.contenedor.querySelector("#btnDirIzq");
-        this.btnPrev = this.contenedor.querySelector("#btnPrev");
-        this.btnDirDer = this.contenedor.querySelector("#btnDirDer");
+        this.joystick = this.container.querySelector("#joystick-container");
+        this.puck = this.container.querySelector("#joystick-puck");
+        this.xValue = this.container.querySelector("#joystick-x");
+        this.yValue = this.container.querySelector("#joystick-y");
+        this.hornButton = this.container.querySelector("#horn-button");
+        this.leftButton = this.container.querySelector("#light-left");
+        this.brakeButton = this.container.querySelector("#light-brake");
+        this.rightButton = this.container.querySelector("#light-right");
 
         if (!this.puck || !this.joystick) return;
 
-        this.puck.addEventListener("mousedown", () => this.iniciarJoystick(), {signal});
-        window.addEventListener("mousemove", (event) => this.moverJoystick(event), {signal});
-        window.addEventListener("mouseup", () => this.detenerJoystick(), {signal});
-        window.addEventListener("blur", () => this.detenerJoystick(), {signal});
+        this.puck.addEventListener("mousedown", () => this.startJoystick(), {signal});
+        window.addEventListener("mousemove", (event) => this.moveJoystick(event), {signal});
+        window.addEventListener("mouseup", () => this.stopJoystick(), {signal});
+        window.addEventListener("blur", () => this.stopJoystick(), {signal});
 
         this.puck.addEventListener("touchstart", (event) => {
             event.preventDefault();
-            this.iniciarJoystick();
+            this.startJoystick();
         }, {signal, passive: false});
 
         window.addEventListener("touchmove", (event) => {
             if (this.dragging) event.preventDefault();
-            this.moverJoystick(event);
+            this.moveJoystick(event);
         }, {signal, passive: false});
 
-        window.addEventListener("touchend", () => this.detenerJoystick(), {signal});
-        window.addEventListener("touchcancel", () => this.detenerJoystick(), {signal});
+        window.addEventListener("touchend", () => this.stopJoystick(), {signal});
+        window.addEventListener("touchcancel", () => this.stopJoystick(), {signal});
 
-        this.btnClaxon?.addEventListener("click", () => {
-            mqttService.publicar(topics.accion.claxon, {estado: 1});
+        this.hornButton?.addEventListener("click", () => {
+            mqttService.publish(topics.action.horn, {[FIELD.HORN]: 1});
         }, {signal});
 
-        this.btnDirIzq?.addEventListener("click", () => this.controlarLuces("izq"), {signal});
-        this.btnPrev?.addEventListener("click", () => this.controlarLuces("prev"), {signal});
-        this.btnDirDer?.addEventListener("click", () => this.controlarLuces("der"), {signal});
+        this.leftButton?.addEventListener("click", () => this.toggleLight(LIGHT.LEFT), {signal});
+        this.brakeButton?.addEventListener("click", () => this.toggleLight(LIGHT.BRAKE), {signal});
+        this.rightButton?.addEventListener("click", () => this.toggleLight(LIGHT.RIGHT), {signal});
 
-        this.actualizarLuces();
+        this.updateLights();
     },
 
-    iniciarJoystick() {
+    startJoystick() {
         this.dragging = true;
 
         if (!this.sendInterval) {
             this.sendInterval = setInterval(() => {
-                mqttService.publicar(topics.modo.manual, this.latestMsg);
-            }, this.FRECUENCIA_MS);
+                mqttService.publish(topics.mode.manual, this.latestMessage);
+            }, this.SEND_INTERVAL_MS);
         }
     },
 
-    suavizar(valor) {
-        const signo = Math.sign(valor);
-        let abs = Math.abs(valor);
+    smooth(value) {
+        const sign = Math.sign(value);
+        const magnitude = Math.abs(value);
 
-        if (abs <= this.DEADZONE) return 0;
+        if (magnitude <= this.DEAD_ZONE) return 0;
 
-        const normalizado = (abs - this.DEADZONE) / (1 - this.DEADZONE);
-        const conCurva = Math.pow(normalizado, this.CURVA_POTENCIA);
-        const resultado = this.DEADZONE + conCurva * (1 - this.DEADZONE);
-
-        return signo * resultado;
+        const normalized = (magnitude - this.DEAD_ZONE) / (1 - this.DEAD_ZONE);
+        const curved = Math.pow(normalized, this.CURVE_POWER);
+        return sign * (this.DEAD_ZONE + curved * (1 - this.DEAD_ZONE));
     },
 
-    moverJoystick(evento) {
+    moveJoystick(event) {
         if (!this.dragging) return;
 
         const rect = this.joystick.getBoundingClientRect();
         const radius = this.joystick.offsetWidth / 2;
 
-        const clientX = evento.touches ? evento.touches[0].clientX : evento.clientX;
-        const clientY = evento.touches ? evento.touches[0].clientY : evento.clientY;
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
 
         let dx = clientX - (rect.left + radius);
         let dy = clientY - (rect.top + radius);
@@ -156,125 +167,128 @@ const manual = {
         const rawX = dx / radius;
         const rawY = (dy / radius) * -1; // invertir eje Y (arriba positivo)
 
-        const xCurva = this.suavizar(rawX);
-        const yCurva = this.suavizar(rawY);
+        const curveX = this.smooth(rawX);
+        const curveY = this.smooth(rawY);
 
-        const xFiltrado = this.FILTRO_ALPHA * xCurva + (1 - this.FILTRO_ALPHA) * this.ultimoX;
-        const yFiltrado = this.FILTRO_ALPHA * yCurva + (1 - this.FILTRO_ALPHA) * this.ultimoY;
+        const filteredX = this.FILTER_ALPHA * curveX + (1 - this.FILTER_ALPHA) * this.lastX;
+        const filteredY = this.FILTER_ALPHA * curveY + (1 - this.FILTER_ALPHA) * this.lastY;
 
-        this.ultimoX = xFiltrado;
-        this.ultimoY = yFiltrado;
+        this.lastX = filteredX;
+        this.lastY = filteredY;
 
-        this.latestMsg = {
-            x: parseFloat(xFiltrado.toFixed(2)),
-            y: parseFloat(yFiltrado.toFixed(2))
+        this.latestMessage = {
+            [FIELD.X]: parseFloat(filteredX.toFixed(2)),
+            [FIELD.Y]: parseFloat(filteredY.toFixed(2))
         };
 
-        if (this.valX) this.valX.innerText = this.latestMsg.x.toFixed(2);
-        if (this.valY) this.valY.innerText = this.latestMsg.y.toFixed(2);
+        if (this.xValue) this.xValue.innerText = this.latestMessage[FIELD.X].toFixed(2);
+        if (this.yValue) this.yValue.innerText = this.latestMessage[FIELD.Y].toFixed(2);
     },
 
-    detenerJoystick() {
+    stopJoystick() {
         if (!this.dragging) return;
         this.dragging = false;
 
+        this.clearSendInterval();
+
+        this.puck.style.transform = "translate(-50%, -50%)";
+        this.lastX = 0;
+        this.lastY = 0;
+        this.latestMessage = {[FIELD.X]: 0, [FIELD.Y]: 0};
+
+        if (this.xValue) this.xValue.innerText = "0.00";
+        if (this.yValue) this.yValue.innerText = "0.00";
+
+        mqttService.publish(topics.mode.manual, {[FIELD.X]: 0, [FIELD.Y]: 0});
+    },
+
+    clearSendInterval() {
         if (this.sendInterval) {
             clearInterval(this.sendInterval);
             this.sendInterval = null;
         }
-
-        this.puck.style.transform = "translate(-50%, -50%)";
-        this.ultimoX = 0;
-        this.ultimoY = 0;
-        this.latestMsg = {x: 0, y: 0};
-
-        if (this.valX) this.valX.innerText = "0.00";
-        if (this.valY) this.valY.innerText = "0.00";
-
-        mqttService.publicar(topics.modo.manual, {x: 0, y: 0});
     },
 
-    resetLuces() {
-        this.estadoLuces = {...LUCES_OFF};
+    resetLights() {
+        this.lightState = {...LIGHTS_OFF};
     },
 
-    controlarLuces(tipo) {
-        const activaAnterior = Object.keys(this.estadoLuces).find(k => this.estadoLuces[k]);
+    publishLight(type) {
+        mqttService.publish(topics.action.lights, {[FIELD.LIGHT]: type});
+    },
 
-        if (this.estadoLuces[tipo]) {
-            this.estadoLuces[tipo] = false;
+    toggleLight(type) {
+        const previous = this.activeLight;
+
+        if (this.lightState[type]) {
+            this.lightState[type] = false;
         } else {
-            this.resetLuces();
-            this.estadoLuces[tipo] = true;
+            this.resetLights();
+            this.lightState[type] = true;
         }
 
-        this.actualizarLuces();
+        this.updateLights();
 
-        const activaActual = Object.keys(this.estadoLuces).find(k => this.estadoLuces[k]);
+        const current = this.activeLight;
 
-        if (!activaActual) {
-            this.limpiarIntervaloLuces();
-            mqttService.publicar(topics.accion.luces, {tipo: "off"});
+        if (!current) {
+            this.clearLightInterval();
+            this.publishLight(LIGHT.OFF);
             return;
         }
 
-        if (activaAnterior !== activaActual || !this.lucesInterval) {
-            this.limpiarIntervaloLuces();
+        if (previous !== current || !this.lightInterval) {
+            this.clearLightInterval();
 
             // Repetir cada 500 ms para producir el parpadeo.
-            mqttService.publicar(topics.accion.luces, {tipo: activaActual});
-            this.lucesInterval = setInterval(() => {
-                mqttService.publicar(topics.accion.luces, {tipo: activaActual});
-            }, 500);
+            this.publishLight(current);
+            this.lightInterval = setInterval(() => this.publishLight(current), 500);
         }
     },
 
-    limpiarIntervaloLuces() {
-        if (this.lucesInterval) {
-            clearInterval(this.lucesInterval);
-            this.lucesInterval = null;
+    clearLightInterval() {
+        if (this.lightInterval) {
+            clearInterval(this.lightInterval);
+            this.lightInterval = null;
         }
     },
 
-    actualizarLuces() {
-        if (!this.btnDirIzq || !this.btnDirDer || !this.btnPrev) return;
+    updateLights() {
+        for (const [type, key] of LIGHT_BUTTONS) {
+            const button = this[key];
+            if (!button) continue;
 
-        const activar = (btn, activo) => {
-            btn.classList.toggle("btn-success", activo);
-            btn.classList.toggle("btn-outline", !activo);
-            btn.classList.toggle("animate-pulse", activo);
-        };
-
-        activar(this.btnDirIzq, this.estadoLuces.izq);
-        activar(this.btnPrev, this.estadoLuces.prev);
-        activar(this.btnDirDer, this.estadoLuces.der);
+            const active = this.lightState[type];
+            button.classList.toggle("btn-success", active);
+            button.classList.toggle("btn-outline", !active);
+            button.classList.toggle("animate-pulse", active);
+        }
     },
 
-    eliminar() {
-        const habiaLuces = Object.values(this.estadoLuces).some(Boolean);
-        this.resetLuces();
+    remove() {
+        const hadLights = this.activeLight !== null;
+        this.resetLights();
 
-        if (habiaLuces) {
-            mqttService.publicar(topics.accion.luces, {tipo: "off"});
-        }
+        if (hadLights) this.publishLight(LIGHT.OFF);
 
         if (this.abortController) {
             this.abortController.abort();
             this.abortController = null;
         }
 
-        this.detenerJoystick();
-        this.limpiarIntervaloLuces();
+        this.stopJoystick();
+        this.clearSendInterval();
+        this.clearLightInterval();
 
-        this.contenedor = null;
+        this.container = null;
         this.joystick = null;
         this.puck = null;
-        this.valX = null;
-        this.valY = null;
-        this.btnClaxon = null;
-        this.btnDirIzq = null;
-        this.btnPrev = null;
-        this.btnDirDer = null;
+        this.xValue = null;
+        this.yValue = null;
+        this.hornButton = null;
+        this.leftButton = null;
+        this.brakeButton = null;
+        this.rightButton = null;
     }
 };
 
