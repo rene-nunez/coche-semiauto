@@ -1,6 +1,6 @@
 # Coche Semiautónomo
 
-Prototipo de coche semiautónomo con ESP32 y control desde el navegador por MQTT. Se maneja con un joystick virtual o con modos de asistencia (seguidor de línea, evasión de obstáculos y navegación GPS). Requiere supervisión humana en todo momento.
+Prototipo de coche semiautónomo con ESP32 y control desde el navegador por MQTT. Se maneja con un joystick virtual o mediante modos autónomos de seguimiento de línea, navegación por GPS y evasión de obstáculos, bajo supervisión humana.
 
 ![hardware](./assets/hardware.jpeg)
 
@@ -43,7 +43,7 @@ Necesitas un broker con WebSockets, [PlatformIO CLI](https://platformio.org/inst
 
 ### 1. Broker
 
-Se recomienda [Eclipse Mosquitto](https://mosquitto.org/): [mosquitto/mosquitto.conf](mosquitto/mosquitto.conf) trae MQTT en 1883 y WebSockets en 9001. También funcionan brokers públicos como EMQX, HiveMQ, y test.mosquitto.org, con sus propios puertos y rutas de acceso.
+Se recomienda [Eclipse Mosquitto](https://mosquitto.org/): el archivo de configuración local [mosquitto.conf](mosquitto/mosquitto.conf) trae MQTT en 1883 y WebSockets en 9001. También funcionan brokers públicos como EMQX, HiveMQ, y test.mosquitto.org, con sus propios puertos y rutas de acceso.
 
 ESP32, broker y navegador deben estar en la misma red, salvo que el broker sea accesible desde Internet. Evita redes con aislamiento de punto de acceso.
 
@@ -68,12 +68,12 @@ pio run --target upload
 pio device monitor
 ```
 
-Las librerías que se utilizan son:
+Librerías utilizadas:
 
-- PubSubClient `^2.8.0`
-- TinyGPSPlus `^1.1.0`
-- PCF8574 `^0.4.4`
-- ArduinoJson `^7.2.2`.
+- PubSubClient
+- TinyGPSPlus
+- PCF8574
+- ArduinoJson
 
 ### 3. Frontend
 
@@ -83,7 +83,7 @@ npm ci
 cp .env.example .env
 ```
 
-Edita `.env` con el protocolo (`ws`/`wss`), host, puerto y ruta WebSocket del broker. Los ejemplos están en [`.env.example`](./frontend/.env.example). Después inicia el servidor:
+Edita .env con el protocolo (WebSocket o WebSocket Secure), host, puerto y ruta WebSocket del broker. Los ejemplos están en [.env.example](./frontend/.env.example). Después inicia el servidor:
 
 ```bash
 npm run dev
@@ -103,14 +103,14 @@ El frontend publica comandos y escucha la ubicación; el firmware hace lo contra
 
 | Publicador | Suscriptor | Tópico | Ejemplo |
 |:---|:---|:---|:---|
-| Web | ESP32 | `coche-semiauto/accion/modo` | `{"modo":"manual"}` |
-| Web | ESP32 | `coche-semiauto/modo/manual` | `{"x":0.5,"y":0.3}` |
-| Web | ESP32 | `coche-semiauto/accion/luces` | `{"tipo":"izq"}` |
-| Web | ESP32 | `coche-semiauto/accion/claxon` | `{"estado":1}` |
-| Web | ESP32 | `coche-semiauto/modo/seguidor` | `{"accion":"activar"}` |
-| Web | ESP32 | `coche-semiauto/modo/obstaculos` | `{"accion":"activar"}` |
-| Web | ESP32 | `coche-semiauto/modo/navegacion` | `{"accion":"iniciar","lat":19.24,"lon":-103.69}` |
-| ESP32 | Web | `coche-semiauto/estado/ubicacion` | `{"lat":19.24,"lon":-103.69,"error":40,"sat":4,"destino":false}` |
+| Control | ESP32 | `coche-semiauto/accion/modo` | `{"modo":"manual"}` |
+| Control | ESP32 | `coche-semiauto/modo/manual` | `{"x":0.5,"y":0.3}` |
+| Control | ESP32 | `coche-semiauto/accion/luces` | `{"tipo":"izq"}` |
+| Control | ESP32 | `coche-semiauto/accion/claxon` | `{"estado":1}` |
+| Control | ESP32 | `coche-semiauto/modo/seguidor` | `{"accion":"activar"}` |
+| Control | ESP32 | `coche-semiauto/modo/obstaculos` | `{"accion":"activar"}` |
+| Control | ESP32 | `coche-semiauto/modo/navegacion` | `{"accion":"iniciar","lat":19.24,"lon":-103.69}` |
+| ESP32 | Control | `coche-semiauto/estado/ubicacion` | `{"lat":19.24,"lon":-103.69,"error":40,"sat":4,"destino":false}` |
 
 | Campo | Valores o rango |
 |:---|:---|
@@ -126,4 +126,4 @@ El frontend publica comandos y escucha la ubicación; el firmware hace lo contra
 
 ## Licencia
 
-Este proyecto se distribuye bajo los términos de la Licencia MIT. Consulta el archivo LICENSE [./LICENSE] para más información.
+Este proyecto se distribuye bajo los términos de la Licencia MIT. Consulta el archivo [LICENSE](./LICENSE) para más información.
