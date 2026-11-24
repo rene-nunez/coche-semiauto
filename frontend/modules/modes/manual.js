@@ -1,8 +1,9 @@
 import mqttService from "../mqtt/mqttService.js";
 import {topics} from "../mqtt/topics.js";
 
+const LUCES_OFF = Object.freeze({izq: false, prev: false, der: false});
+
 const manual = {
-    // Elementos de la interfaz
     contenedor: null,
     joystick: null,
     puck: null,
@@ -13,20 +14,17 @@ const manual = {
     btnPrev: null,
     btnDirDer: null,
 
-    // Estado interno
     dragging: false,
     latestMsg: {x: 0, y: 0},
     sendInterval: null,
     lucesInterval: null,
-    estadoLuces: {izq: false, prev: false, der: false},
+    estadoLuces: {...LUCES_OFF},
     abortController: null,
 
-    FRECUENCIA_MS: 50, // 20Hz para publicaciones MQTT
-    DEADZONE: 0.10, // Zona muerta del joystick
-
-    // Filtrado y suavizado de valores x, y
-    CURVA_POTENCIA: 1.8, // Curva de potencia desde el centro a los extremos
-    FILTRO_ALPHA: 0.3, // 0-1: 0 = muy filtrado, 1 = sin filtro
+    FRECUENCIA_MS: 50,
+    DEADZONE: 0.10,
+    CURVA_POTENCIA: 1.8,
+    FILTRO_ALPHA: 0.3, // 0 = muy filtrado, 1 = sin filtro
     ultimoX: 0,
     ultimoY: 0,
 
@@ -67,7 +65,6 @@ const manual = {
         this.enlazar();
     },
 
-    // Asignar eventos (mouse/touch) y botones
     enlazar() {
         this.abortController = new AbortController();
         const {signal} = this.abortController;
@@ -122,7 +119,6 @@ const manual = {
         }
     },
 
-    // Aplica curva de respuesta y filtro paso bajo
     suavizar(valor) {
         const signo = Math.sign(valor);
         let abs = Math.abs(valor);
@@ -136,7 +132,6 @@ const manual = {
         return signo * resultado;
     },
 
-    // Calcula posición del joystick
     moverJoystick(evento) {
         if (!this.dragging) return;
 
@@ -151,7 +146,6 @@ const manual = {
 
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // Limita el movimiento al radio del joystick
         if (distance > radius) {
             dx *= radius / distance;
             dy *= radius / distance;
@@ -162,11 +156,9 @@ const manual = {
         const rawX = dx / radius;
         const rawY = (dy / radius) * -1; // invertir eje Y (arriba positivo)
 
-        // Aplica curva de respuesta
         const xCurva = this.suavizar(rawX);
         const yCurva = this.suavizar(rawY);
 
-        // Filtro paso bajo (EMA)
         const xFiltrado = this.FILTRO_ALPHA * xCurva + (1 - this.FILTRO_ALPHA) * this.ultimoX;
         const yFiltrado = this.FILTRO_ALPHA * yCurva + (1 - this.FILTRO_ALPHA) * this.ultimoY;
 
@@ -182,7 +174,6 @@ const manual = {
         if (this.valY) this.valY.innerText = this.latestMsg.y.toFixed(2);
     },
 
-    // Detener el joystick y reiniciar valores
     detenerJoystick() {
         if (!this.dragging) return;
         this.dragging = false;
@@ -192,7 +183,7 @@ const manual = {
             this.sendInterval = null;
         }
 
-        this.puck.style.transform = `translate(-50%, -50%)`;
+        this.puck.style.transform = "translate(-50%, -50%)";
         this.ultimoX = 0;
         this.ultimoY = 0;
         this.latestMsg = {x: 0, y: 0};
@@ -203,35 +194,34 @@ const manual = {
         mqttService.publicar(topics.modo.manual, {x: 0, y: 0});
     },
 
+    resetLuces() {
+        this.estadoLuces = {...LUCES_OFF};
+    },
+
     controlarLuces(tipo) {
         const activaAnterior = Object.keys(this.estadoLuces).find(k => this.estadoLuces[k]);
 
-         // Solo una activa a la vez
         if (this.estadoLuces[tipo]) {
             this.estadoLuces[tipo] = false;
-
         } else {
-            this.estadoLuces = {izq: false, prev: false, der: false};
+            this.resetLuces();
             this.estadoLuces[tipo] = true;
         }
 
         this.actualizarLuces();
 
-        // Obtener la nueva luz activa después del cambio
         const activaActual = Object.keys(this.estadoLuces).find(k => this.estadoLuces[k]);
 
-        // Si ninguna luz quedó activa se detienen las publicaciones y se apaga el LED
         if (!activaActual) {
             this.limpiarIntervaloLuces();
             mqttService.publicar(topics.accion.luces, {tipo: "off"});
             return;
         }
 
-         // Reiniciar el intervalo solo si: cambió la luz activa o no existe intervalo aún
         if (activaAnterior !== activaActual || !this.lucesInterval) {
             this.limpiarIntervaloLuces();
 
-            // Publicar enseguida y repetir cada 500ms para producir el parpadeo
+            // Repetir cada 500 ms para producir el parpadeo.
             mqttService.publicar(topics.accion.luces, {tipo: activaActual});
             this.lucesInterval = setInterval(() => {
                 mqttService.publicar(topics.accion.luces, {tipo: activaActual});
@@ -246,9 +236,8 @@ const manual = {
         }
     },
 
-    // Actualiza estilo visual de los botones de luces
     actualizarLuces() {
-        if(!this.btnDirIzq || !this.btnDirDer || !this.btnPrev) return;
+        if (!this.btnDirIzq || !this.btnDirDer || !this.btnPrev) return;
 
         const activar = (btn, activo) => {
             btn.classList.toggle("btn-success", activo);
@@ -263,7 +252,7 @@ const manual = {
 
     eliminar() {
         const habiaLuces = Object.values(this.estadoLuces).some(Boolean);
-        this.estadoLuces = {izq: false, prev: false, der: false};
+        this.resetLuces();
 
         if (habiaLuces) {
             mqttService.publicar(topics.accion.luces, {tipo: "off"});
@@ -287,6 +276,6 @@ const manual = {
         this.btnPrev = null;
         this.btnDirDer = null;
     }
-}
+};
 
 export default manual;
