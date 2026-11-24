@@ -1,7 +1,7 @@
 {
-    "name": "control-web",
+    "name": "control",
     "version": "1.0.0",
-    "description": "Control Web para coche semiautónomo con MQTT",
+    "description": "Control del navegador para coche semiautónomo con MQTT",
     "private": true,
     "license": "MIT",
     "type": "module",

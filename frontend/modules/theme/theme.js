@@ -1,4 +1,4 @@
-const THEME_KEY = "control-web-theme";
+const THEME_KEY = "control-theme";
 const THEME_LIGHT = "cmyk";
 const THEME_DARK = "dark";
 

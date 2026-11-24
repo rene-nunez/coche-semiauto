@@ -1,6 +1,6 @@
-# Control Web
+# Control del navegador
 
-Interfaz web para el coche semiautónomo: joystick y modos de asistencia, conectados al broker por MQTT sobre WebSockets. Los modos, tópicos y montaje del hardware están en el [README principal](../README.md).
+Control del navegador para el coche semiautónomo: joystick y modos de asistencia, conectados al broker por MQTT sobre WebSockets. Los modos, tópicos y montaje del hardware están en el [README principal](../README.md).
 
 ## Requisitos
 

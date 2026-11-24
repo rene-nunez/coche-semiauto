@@ -39,7 +39,7 @@ const mqttService = {
         if (this.cliente) return;
 
         this.cliente = mqtt.connect(URL, {
-            clientId: "control-web-" + (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)),
+            clientId: "control-" + (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)),
             clean: true,
             reconnectPeriod: 2000,
             connectTimeout: 5000
