@@ -1,10 +1,10 @@
 # Control
 
-Control del navegador por MQTT para el coche RC semiautónomo utilizando el joystick virtual y modos autónomos, conectados al broker por MQTT sobre WebSockets. Los modos, tópicos y montaje del hardware están en el [README](../README.md) principal.
+Control del navegador por MQTT para el coche RC semiautónomo utilizando el joystick virtual y modos de asistencia, conectados al broker por MQTT sobre WebSockets. Los modos, tópicos y montaje del hardware están en el [README](../README.md) principal.
 
 ## Requisitos
 
-- Node.js 20.19+ y npm (requisito de Vite 8).
+- Node.js 20.19+ o 22.12+ y npm (requisito de Vite 8).
 - Broker MQTT con WebSockets. Se recomienda Mosquitto con la configuración incluida en el repositorio; también funcionan brokers públicos.
 
 ## Instalación

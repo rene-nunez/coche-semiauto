@@ -1,6 +1,6 @@
 # Coche Semiautónomo
 
-Prototipo de coche semiautónomo con ESP32 y control desde el navegador por MQTT. Se maneja con un joystick virtual o mediante modos autónomos de seguimiento de línea, navegación por GPS y evasión de obstáculos, bajo supervisión humana.
+Prototipo de coche semiautónomo con ESP32 y control desde el navegador por MQTT. Se maneja con un joystick virtual o mediante modos de asistencia para seguimiento de línea, navegación por GPS y evasión de obstáculos, bajo supervisión humana.
 
 ![hardware](./assets/hardware.jpeg)
 
