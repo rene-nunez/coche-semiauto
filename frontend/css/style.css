@@ -21,24 +21,19 @@
     --color-secondary-content: oklch(27% 0.028 342.258);
 }
 
-/* ------------------------- Interfaz del modo ------------------------- */
 #mode-interface {
     @apply flex flex-col flex-1 relative overflow-hidden bg-base-300/10;
-    position: relative;
     z-index: 1;
 }
 
-/* ------------------------- Wrapper de la interfaz del modo ------------------------- */
 .mode-wrapper {
     @apply w-full max-w-4xl mx-auto h-full flex flex-col items-center p-6 md:p-10 transition-all duration-300;
 }
 
-/* Centrado vertical para modos: manual, seguidor y obstáculos */
 .mode-center {
     @apply flex items-center justify-center;
 }
 
-/* ------------------------- Mapa de Leaflet ------------------------- */
 #mapa {
     @apply absolute inset-0;
 }
