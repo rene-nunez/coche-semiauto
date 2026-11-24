@@ -3,29 +3,34 @@ import "leaflet/dist/leaflet.css";
 import mqttService from "../mqtt/mqttService.js";
 import {topics} from "../mqtt/topics.js";
 
+const TILES_TEMA = {
+    claro: "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png",
+    oscuro: "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+};
+
 const navegacion = {
     mapa: null,
     destino: null,
     ultimoDestino: null,
-    marcadorD: null, // Marcador dinámico del destino
-    marcadorSC: null, // Marcador dinámico del coche semiautónomo
-    reinicioTimeout: null, // Temporizador de reinicio tras alcanzar el destino
-    
-    contenedor: null, // Interfaz del modo
+    marcadorD: null,
+    marcadorSC: null,
+    reinicioTimeout: null,
+    layerTema: null,
+    layersControl: null,
+    temaChangeHandler: null,
+    mapaClickHandler: null,
+    btnClick: null,
 
-    // Elementos de la interfaz
+    contenedor: null,
     btnNavegacion: null,
     divDistancia: null,
     divError: null,
     divSatelites: null,
 
-    /*
-        Estados de navegación:
-            1. SIN_DESTINO: mapa creado, sin destino definido.
-            2. DESTINO_SELECCIONADO: destino marcado, esperando confirmación de envío.
-            3. NAVEGANDO: el coche semiautónomo está en movimiento.
-            4. PAUSADO: detenido con un destino activo (el destino guardado se puede reanudar o cambiar).
-    */
+    // SIN_DESTINO: mapa listo, sin destino.
+    // DESTINO_SELECCIONADO: destino marcado, pendiente de envío.
+    // NAVEGANDO: el coche está en movimiento.
+    // PAUSADO: detenido con un destino que se puede reanudar o cambiar.
     estado: "SIN_DESTINO",
 
     iconos: {
@@ -35,7 +40,7 @@ const navegacion = {
                 <path fill="var(--color-info)" stroke="rgba(0,0,0,0.35)" stroke-width="1.2" stroke-linejoin="round" d="M2.52 3.515A2.5 2.5 0 0 1 4.82 2h6.362c1 0 1.904.596 2.298 1.515l.792 1.848c.075.175.21.319.38.404.5.25.855.715.965 1.262l.335 1.679q.05.242.049.49v.413c0 .814-.39 1.543-1 1.997V13.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1.338c-1.292.048-2.745.088-4 .088s-2.708-.04-4-.088V13.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1.892c-.61-.454-1-1.183-1-1.997v-.413a2.5 2.5 0 0 1 .049-.49l.335-1.68c.11-.546.465-1.012.964-1.261a.8.8 0 0 0 .381-.404l.792-1.848ZM3 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2m10 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2M6 8a1 1 0 0 0 0 2h4a1 1 0 1 0 0-2zM2.906 5.189a.51.51 0 0 0 .497.731c.91-.073 3.35-.17 4.597-.17s3.688.097 4.597.17a.51.51 0 0 0 .497-.731l-.956-1.913A.5.5 0 0 0 11.691 3H4.309a.5.5 0 0 0-.447.276L2.906 5.19Z" />
             </svg>`,
             iconSize: [35, 35],
-            iconAnchor: [17.5, 17.5], // Punto del icono que se alinea con la coordenada
+            iconAnchor: [17.5, 17.5],
             popupAnchor: [0, -18]
         }),
 
@@ -50,7 +55,6 @@ const navegacion = {
         })
     },
 
-    // Cargar la interfaz del modo
     montar(contenedor) {
         this.contenedor = contenedor;
 
@@ -77,9 +81,9 @@ const navegacion = {
             </div>
         `;
 
-        this.enlazar(); // Obtener los elementos de la interfaz y asignar eventos
-        this.iniciarMapa(); // Inicializar el mapa utilizando Leaflet
-        this.actualizarBoton(); // Sincronizar texto del botón con estado inicial
+        this.enlazar();
+        this.iniciarMapa();
+        this.actualizarBoton();
     },
 
     enlazar() {
@@ -97,62 +101,47 @@ const navegacion = {
     },
 
     iniciarMapa() {
-        if (this.mapa) this.mapa.remove(); // Evitar duplicados
+        if (this.mapa) this.mapa.remove();
 
         this.mapa = L.map("mapa", {
             center: [0, 0],
             zoom: 16,
             minZoom: 3,
             maxZoom: 21,
-            maxBounds: [[-90, -180], [90, 180]], // Límite para evitar mapa en el vacío
+            maxBounds: [[-90, -180], [90, 180]],
             maxBoundsViscosity: 1.0,
-            worldCopyJump: false // Evitar mapa infinito horizontalmente
+            worldCopyJump: false
         });
-        
-        // Sigue el tema activo de DaisyUI
-        const themeCheckbox = document.querySelector(".theme-controller");
-        const temaUrl = themeCheckbox?.checked
-            ? "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png"
-            : "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png";
 
-        const layerTema = L.tileLayer(temaUrl, {
+        const themeCheckbox = document.querySelector(".theme-controller");
+        const urlTema = () => themeCheckbox?.checked ? TILES_TEMA.claro : TILES_TEMA.oscuro;
+
+        this.layerTema = L.tileLayer(urlTema(), {
             minZoom: 3,
             maxZoom: 21,
             noWrap: true,
             attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
         }).addTo(this.mapa);
 
-        this.layerTema = layerTema;
-
-        this.temaChangeHandler = () => {
-            const url = themeCheckbox?.checked
-                ? "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png"
-                : "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png";
-            layerTema.setUrl(url);
-        };
-        
+        this.temaChangeHandler = () => this.layerTema.setUrl(urlTema());
         themeCheckbox?.addEventListener("change", this.temaChangeHandler);
 
-        const layerOutdoors = L.tileLayer("https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png", 
-            {
-                minZoom: 3,
-                maxZoom: 21,
-                noWrap: true,
-                attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
-            }
-        );
+        const layerOutdoors = L.tileLayer("https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png", {
+            minZoom: 3,
+            maxZoom: 21,
+            noWrap: true,
+            attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+        });
 
-        const layerSatellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-            {
-                minZoom: 3,
-                maxZoom: 19,
-                noWrap: true,
-                attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
-            }
-        );
+        const layerSatellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+            minZoom: 3,
+            maxZoom: 19,
+            noWrap: true,
+            attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+        });
 
         this.layersControl = L.control.layers({
-            "Tema": layerTema,
+            "Tema": this.layerTema,
             Outdoors: layerOutdoors,
             Satélite: layerSatellite
         }).addTo(this.mapa);
@@ -160,32 +149,30 @@ const navegacion = {
         this.mapa.on("click", this.mapaClickHandler);
     },
 
-    // Crear y actualizar marcador del destino
+    popupDestino(latlng) {
+        return `
+            <div class="text-xs font-mono leading-tight">
+                <div class="font-semibold tracking-wide mb-0.5">Destino</div>
+                <div><span class="opacity-60">lat </span>${latlng.lat.toFixed(5)}</div>
+                <div><span class="opacity-60">lon </span>${latlng.lng.toFixed(5)}</div>
+            </div>
+        `;
+    },
+
     seleccionarDestino(latlng) {
         this.destino = latlng;
 
-        if (!this.marcadorD) {
-            this.marcadorD = L.marker(latlng, {icon: this.iconos.destino}).addTo(this.mapa).bindPopup(`
-                <div class="text-xs font-mono leading-tight">
-                    <div class="font-semibold tracking-wide mb-0.5">Destino</div>
-                    <div><span class="opacity-60">lat </span>${latlng.lat.toFixed(5)}</div>
-                    <div><span class="opacity-60">lon </span>${latlng.lng.toFixed(5)}</div>
-                </div>
-            `);
-            
-            this.marcadorD.openPopup();
+        const nuevo = !this.marcadorD;
 
-        } else {
-            this.marcadorD.setLatLng(latlng).setPopupContent(`
-                <div class="text-xs font-mono leading-tight">
-                    <div class="font-semibold tracking-wide mb-0.5">Destino</div>
-                    <div><span class="opacity-60">lat </span>${latlng.lat.toFixed(5)}</div>
-                    <div><span class="opacity-60">lon </span>${latlng.lng.toFixed(5)}</div>
-                </div>
-            `);
+        if (nuevo) {
+            this.marcadorD = L.marker(latlng, {icon: this.iconos.destino})
+                .addTo(this.mapa)
+                .bindPopup(this.popupDestino(latlng));
         }
-        
-        // Actualizar la distancia al seleccionar un nuevo destino solo si el marcador del coche semiautónomo ya existe
+
+        this.marcadorD.setLatLng(latlng).setPopupContent(this.popupDestino(latlng));
+        if (nuevo) this.marcadorD.openPopup();
+
         if (this.marcadorSC) {
             const dist = latlng.distanceTo(this.marcadorSC.getLatLng());
             if (this.divDistancia) this.divDistancia.textContent = `${dist.toFixed(2)}m`;
@@ -205,7 +192,7 @@ const navegacion = {
 
     controlarDestino() {
         switch (this.estado) {
-            case "SIN_DESTINO": // Fallback
+            case "SIN_DESTINO":
             case "DESTINO_SELECCIONADO":
                 if (!this.destino) return;
 
@@ -255,8 +242,7 @@ const navegacion = {
             const dist = this.destino.distanceTo(pos);
             this.divDistancia.textContent = `${dist.toFixed(2)}m`;
         }
-        
-        // Inicializar el marcador del coche semiautónomo y su ventana emergente
+
         const popup = `
             <div class="text-xs font-mono leading-tight">
                 <div class="font-semibold tracking-wide mb-0.5">Coche semiautónomo</div>
@@ -264,15 +250,10 @@ const navegacion = {
                 <div><span class="opacity-60">lon </span>${lon.toFixed(5)}</div>
             </div>
         `;
-        
+
         if (!this.marcadorSC) {
             this.marcadorSC = L.marker(pos, {icon: this.iconos.smartcar}).addTo(this.mapa).bindPopup(popup);
-            
-            // Animación de vuelo al marcador solo al obtener la primer ubicación
-            this.mapa.flyTo(pos, 19, {
-                animate: true,
-                duration: 1
-            });
+            this.mapa.flyTo(pos, 19, {animate: true, duration: 1});
         } else {
             this.marcadorSC.setLatLng(pos).setPopupContent(popup);
         }
@@ -281,27 +262,19 @@ const navegacion = {
     actualizarBoton() {
         if (!this.btnNavegacion) return;
 
-        // reset total de clases dinámicas
-        this.btnNavegacion.classList.remove(
-            "btn-success",
-            "btn-info",
-            "btn-secondary"
-        );
+        this.btnNavegacion.classList.remove("btn-success", "btn-info", "btn-secondary");
 
         let texto = "";
 
         if (this.estado === "SIN_DESTINO") {
             this.btnNavegacion.classList.add("btn-success");
             texto = "Selecciona un destino";
-
         } else if (this.estado === "DESTINO_SELECCIONADO") {
             this.btnNavegacion.classList.add("btn-success");
             texto = "Enviar destino";
-
         } else if (this.estado === "NAVEGANDO") {
             this.btnNavegacion.classList.add("btn-secondary");
             texto = "Detener navegación";
-
         } else if (this.estado === "PAUSADO") {
             if (!this.destino || !this.ultimoDestino || this.destino.distanceTo(this.ultimoDestino) > 1) {
                 this.btnNavegacion.classList.add("btn-success");
@@ -310,12 +283,16 @@ const navegacion = {
                 this.btnNavegacion.classList.add("btn-info");
                 texto = "Reanudar navegación";
             }
-        } else {
-            this.btnNavegacion.classList.add("btn-success");
-            texto = "Enviar destino";
         }
 
         this.btnNavegacion.textContent = texto;
+    },
+
+    limpiarDestino() {
+        this.destino = null;
+        this.ultimoDestino = null;
+        this.estado = "SIN_DESTINO";
+        this.actualizarBoton();
     },
 
     reiniciar() {
@@ -336,23 +313,14 @@ const navegacion = {
                 if (this.marcadorD) this.mapa?.removeLayer(this.marcadorD);
 
                 this.marcadorD = null;
-                this.destino = null;
-                this.ultimoDestino = null;
-                this.estado = "SIN_DESTINO";
                 this.reinicioTimeout = null;
-
-                this.actualizarBoton();
+                this.limpiarDestino();
             }, 3000);
 
         } else {
             if (this.marcadorD) this.mapa?.removeLayer(this.marcadorD);
             this.marcadorD = null;
-
-            this.destino = null;
-            this.ultimoDestino = null;
-            this.estado = "SIN_DESTINO";
-
-            this.actualizarBoton();
+            this.limpiarDestino();
         }
     },
 
@@ -367,36 +335,32 @@ const navegacion = {
         const themeCheckbox = document.querySelector(".theme-controller");
         themeCheckbox?.removeEventListener("change", this.temaChangeHandler);
 
-        this.marcadorD && this.mapa?.removeLayer(this.marcadorD);
-        this.marcadorSC && this.mapa?.removeLayer(this.marcadorSC);
+        if (this.marcadorD) this.mapa?.removeLayer(this.marcadorD);
+        if (this.marcadorSC) this.mapa?.removeLayer(this.marcadorSC);
 
         this.layersControl?.remove();
         this.layerTema?.remove();
-
         this.mapa?.remove();
 
-        this.mapa = null;
-        this.layersControl = null;
-        this.layerTema = null;
-        this.temaChangeHandler = null;
-
-        this.destino = null;
-        this.ultimoDestino = null;
-        this.marcadorD = null;
-        this.marcadorSC = null;
-
         this.btnNavegacion?.removeEventListener("click", this.btnClick);
+
         this.btnNavegacion = null;
         this.divDistancia = null;
         this.divError = null;
         this.divSatelites = null;
-
         this.contenedor = null;
 
+        this.mapa = null;
+        this.marcadorD = null;
+        this.marcadorSC = null;
+        this.reinicioTimeout = null;
+        this.layerTema = null;
+        this.layersControl = null;
+        this.temaChangeHandler = null;
         this.mapaClickHandler = null;
         this.btnClick = null;
 
-        this.estado = "SIN_DESTINO";
+        this.limpiarDestino();
     }
 };
 
