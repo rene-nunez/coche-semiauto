@@ -4,6 +4,8 @@ Prototipo de coche semiautónomo con ESP32 y control desde el navegador por MQTT
 
 ![hardware](./assets/hardware.jpeg)
 
+Imagen mejorada con IA. Algunos detalles podrían no ser precisos.
+
 ## Características
 
 - **Manual:** joystick virtual, direccionales, frenos y claxon.
