@@ -1,5 +1,3 @@
-// Estos valores son el contrato con el firmware; se mantienen en español.
-
 export const MODE = Object.freeze({
     MANUAL: "manual",
     LINE: "seguidor",
