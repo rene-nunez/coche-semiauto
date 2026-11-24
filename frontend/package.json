@@ -1,7 +1,7 @@
 {
     "name": "control",
     "version": "1.0.0",
-    "description": "Control del navegador para coche semiautónomo con MQTT",
+    "description": "Control desde el navegador por MQTT para coche RC semiautónomo",
     "private": true,
     "license": "MIT",
     "type": "module",

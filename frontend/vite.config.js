@@ -6,8 +6,7 @@ export default defineConfig({
 
     server: {
         port: 3000,
-        host: true, // Accesible desde otros dispositivos de la red
+        host: true, // Accesible desde otros dispositivos de la red local
         strictPort: true
-        // Estas opciones solo afectan a npm run dev
     }
 });

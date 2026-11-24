@@ -2,8 +2,7 @@ const THEME_KEY = "control-theme";
 const THEME_LIGHT = "cmyk";
 const THEME_DARK = "dark";
 
-// En navegación privada o con almacenamiento bloqueado, localStorage lanza
-// SecurityError; el tema simplemente no se persiste.
+// En navegación privada o con almacenamiento bloqueado, localStorage lanza SecurityError; el tema simplemente no se persiste.
 function leerTema() {
     try {
         return localStorage.getItem(THEME_KEY);
