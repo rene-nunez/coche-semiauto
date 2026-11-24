@@ -39,7 +39,7 @@ Si usas otros puertos o TLS, actualiza mosquitto/mosquitto.conf, firmware/src/co
 
 ## Instrucciones
 
-Necesitas un broker con WebSockets, [PlatformIO CLI](https://platformio.org/install/cli) y Node.js 20.19+.
+Necesitas un broker con WebSockets, [PlatformIO CLI](https://platformio.org/install/cli) y Node.js 20.19+ o 22.12+.
 
 ### 1. Broker
 
